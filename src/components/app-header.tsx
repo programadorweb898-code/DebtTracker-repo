@@ -2,9 +2,20 @@
 
 import { AddDebtorDialog } from './add-debtor-dialog';
 import { PayDebtDialog } from './pay-debt-dialog';
-import { Coins } from 'lucide-react';
+import { Button } from './ui/button';
+import { useAuth } from '@/context/auth-context';
+import { Coins, LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export function AppHeader() {
+  const { logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
   return (
     <header className="py-6 flex items-center justify-between border-b-2 border-primary/20 mb-8">
         <div className="flex items-center gap-3">
@@ -13,9 +24,12 @@ export function AppHeader() {
                 DebtTracker
             </h1>
         </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <PayDebtDialog />
         <AddDebtorDialog />
+        <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Cerrar sesión">
+            <LogOut className="h-5 w-5" />
+        </Button>
       </div>
     </header>
   );
