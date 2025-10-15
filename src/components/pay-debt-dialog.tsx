@@ -43,7 +43,7 @@ export function PayDebtDialog() {
     resolver: zodResolver(payDebtSchema),
     defaultValues: {
       alias: '',
-      amount: undefined,
+      amount: '' as any,
     },
   });
 

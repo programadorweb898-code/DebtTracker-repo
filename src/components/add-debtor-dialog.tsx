@@ -43,7 +43,7 @@ export function AddDebtorDialog() {
     resolver: zodResolver(debtorSchema),
     defaultValues: {
       alias: '',
-      amount: undefined,
+      amount: '' as any,
     },
   });
 
