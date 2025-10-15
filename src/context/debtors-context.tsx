@@ -50,13 +50,20 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
         const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === alias.toLowerCase());
 
         if (existingDebtorIndex === -1) {
-            return state; // Debtor not found, do nothing to the state
+            return state; 
         }
         
+        const debtor = state.debtors[existingDebtorIndex];
+        const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
+        
+        if (amount > totalDebt) {
+          // This case is handled in the component, but as a fallback
+          return state;
+        }
+
         const newDebtsList = [...state.debtors];
         const updatedDebtor = { ...newDebtsList[existingDebtorIndex] };
 
-        // Add a negative amount to represent a payment
         const paymentEntry = {
             id: crypto.randomUUID(),
             amount: -amount,
@@ -64,15 +71,26 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
         };
 
         updatedDebtor.debts = [...updatedDebtor.debts, paymentEntry];
-        newDebtsList[existingDebtorIndex] = updatedDebtor;
 
-        return { ...state, debtors: newDebtsList };
+        const newTotalDebt = totalDebt - amount;
+        
+        if (newTotalDebt <= 0) {
+            // Settle the debt and remove the debtor
+            return {
+                ...state,
+                debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== alias.toLowerCase()),
+            };
+        } else {
+            // Update the debtor's debt list
+            newDebtsList[existingDebtorIndex] = updatedDebtor;
+            return { ...state, debtors: newDebtsList };
+        }
     }
     case 'DELETE_DEBTOR': {
       const { alias } = action.payload;
       return {
         ...state,
-        debtors: state.debtors.filter((d) => d.alias !== alias),
+        debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== alias.toLowerCase()),
       };
     }
     default:
@@ -80,11 +98,13 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
   }
 };
 
+type PayDebtResult = 'SUCCESS' | 'DEBTOR_NOT_FOUND' | 'PAYMENT_EXCEEDS_DEBT';
+
 const initialContextValue = {
     ...initialState,
     isLoading: true,
     addDebt: (alias: string, amount: number) => {},
-    payDebt: (alias: string, amount: number): boolean => false,
+    payDebt: (alias: string, amount: number): PayDebtResult => 'DEBTOR_NOT_FOUND',
     deleteDebtor: (alias: string) => {},
 };
 
@@ -131,13 +151,20 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: 'ADD_DEBT', payload: { alias, amount } });
   };
 
-  const payDebt = (alias: string, amount: number): boolean => {
-    const debtorExists = state.debtors.some((d) => d.alias.toLowerCase() === alias.toLowerCase());
-    if (debtorExists) {
-        dispatch({ type: 'PAY_DEBT', payload: { alias, amount } });
-        return true;
+  const payDebt = (alias: string, amount: number): PayDebtResult => {
+    const debtor = state.debtors.find((d) => d.alias.toLowerCase() === alias.toLowerCase());
+    if (!debtor) {
+        return 'DEBTOR_NOT_FOUND';
     }
-    return false;
+
+    const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
+
+    if (amount > totalDebt) {
+        return 'PAYMENT_EXCEEDS_DEBT';
+    }
+
+    dispatch({ type: 'PAY_DEBT', payload: { alias, amount } });
+    return 'SUCCESS';
   };
 
   const deleteDebtor = (alias: string) => {

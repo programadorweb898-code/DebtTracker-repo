@@ -36,7 +36,9 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
     }).format(amount);
   };
 
-  const lastDebtDate = new Date(debtor.debts[debtor.debts.length - 1].date);
+  const lastTransaction = debtor.debts.length > 0 
+    ? debtor.debts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+    : null;
 
   const handleSettleDebt = () => {
     deleteDebtor(debtor.alias);
@@ -51,7 +53,7 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
     <Card className="flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       <CardHeader>
         <CardTitle className="font-headline truncate">{debtor.alias}</CardTitle>
-        <CardDescription>Last debt added on {lastDebtDate.toLocaleDateString()}</CardDescription>
+        {lastTransaction && <CardDescription>Last transaction on {new Date(lastTransaction.date).toLocaleDateString()}</CardDescription>}
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-4xl font-bold text-destructive">{formatCurrency(totalDebt)}</p>

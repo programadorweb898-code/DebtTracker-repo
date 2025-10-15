@@ -36,7 +36,7 @@ type PayDebtFormValues = z.infer<typeof payDebtSchema>;
 
 export function PayDebtDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const { payDebt, debtors } = useDebtors();
+  const { payDebt } = useDebtors();
   const { toast } = useToast();
 
   const form = useForm<PayDebtFormValues>({
@@ -48,21 +48,31 @@ export function PayDebtDialog() {
   });
 
   const onSubmit = (data: PayDebtFormValues) => {
-    const debtorExists = payDebt(data.alias, data.amount);
+    const result = payDebt(data.alias, data.amount);
     
-    if (debtorExists) {
-      toast({
-          title: 'Success!',
-          description: `Registered a payment of $${data.amount} for ${data.alias}.`,
-      });
-      form.reset();
-      setIsOpen(false);
-    } else {
-      toast({
+    switch (result) {
+      case 'SUCCESS':
+        toast({
+            title: 'Success!',
+            description: `Registered a payment of $${data.amount} for ${data.alias}.`,
+        });
+        form.reset();
+        setIsOpen(false);
+        break;
+      case 'DEBTOR_NOT_FOUND':
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Debtor with alias "${data.alias}" not found.`,
+        });
+        break;
+      case 'PAYMENT_EXCEEDS_DEBT':
+        toast({
           variant: 'destructive',
           title: 'Error',
-          description: `Debtor with alias "${data.alias}" not found.`,
-      });
+          description: `Payment amount exceeds the total debt for ${data.alias}.`,
+        });
+        break;
     }
   };
 
