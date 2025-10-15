@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const debtorSchema = z.object({
   alias: z.string()
+    .trim()
     .min(1, 'Alias is required')
     .max(50, 'Alias is too long')
     .refine((val) => !/\s/.test(val), {
@@ -53,13 +54,14 @@ export function AddDebtorDialog() {
   });
 
   const onSubmit = (data: DebtorFormValues) => {
-    const existingDebtor = debtors.find(d => d.alias.toLowerCase() === data.alias.toLowerCase());
-    addDebt(data.alias, data.amount);
+    const trimmedAlias = data.alias.trim();
+    const existingDebtor = debtors.find(d => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
+    addDebt(trimmedAlias, data.amount);
     toast({
         title: 'Success!',
         description: existingDebtor
             ? `Added $${data.amount} to ${existingDebtor.alias}'s debt.`
-            : `New debtor ${data.alias} added with a debt of $${data.amount}.`,
+            : `New debtor ${trimmedAlias} added with a debt of $${data.amount}.`,
     });
     form.reset();
     setIsOpen(false);

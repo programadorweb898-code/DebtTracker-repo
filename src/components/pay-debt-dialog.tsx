@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const payDebtSchema = z.object({
   alias: z.string()
+    .trim()
     .min(1, 'Alias is required')
     .max(50, 'Alias is too long')
     .refine((val) => !/\s/.test(val), {
@@ -53,13 +54,14 @@ export function PayDebtDialog() {
   });
 
   const onSubmit = (data: PayDebtFormValues) => {
-    const result = payDebt(data.alias, data.amount);
+    const trimmedAlias = data.alias.trim();
+    const result = payDebt(trimmedAlias, data.amount);
     
     switch (result) {
       case 'SUCCESS':
         toast({
             title: 'Success!',
-            description: `Registered a payment of $${data.amount} for ${data.alias}.`,
+            description: `Registered a payment of $${data.amount} for ${trimmedAlias}.`,
         });
         form.reset();
         setIsOpen(false);
@@ -68,14 +70,14 @@ export function PayDebtDialog() {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: `Debtor with alias "${data.alias}" not found.`,
+            description: `Debtor with alias "${trimmedAlias}" not found.`,
         });
         break;
       case 'PAYMENT_EXCEEDS_DEBT':
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: `Payment amount exceeds the total debt for ${data.alias}.`,
+          description: `Payment amount exceeds the total debt for ${trimmedAlias}.`,
         });
         break;
     }

@@ -24,7 +24,8 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
       return { ...state, debtors: action.payload };
     case 'ADD_DEBT': {
       const { alias, amount } = action.payload;
-      const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === alias.toLowerCase());
+      const trimmedAlias = alias.trim();
+      const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
       const newDebts = [...state.debtors];
 
       const newDebt = {
@@ -39,7 +40,7 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
         newDebts[existingDebtorIndex] = updatedDebtor;
       } else {
         newDebts.push({
-          alias,
+          alias: trimmedAlias,
           debts: [newDebt],
         });
       }
@@ -47,7 +48,8 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
     }
     case 'PAY_DEBT': {
         const { alias, amount } = action.payload;
-        const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === alias.toLowerCase());
+        const trimmedAlias = alias.trim();
+        const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
 
         if (existingDebtorIndex === -1) {
             return state; 
@@ -78,7 +80,7 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
             // Settle the debt and remove the debtor
             return {
                 ...state,
-                debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== alias.toLowerCase()),
+                debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== trimmedAlias.toLowerCase()),
             };
         } else {
             // Update the debtor's debt list
@@ -88,9 +90,10 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
     }
     case 'DELETE_DEBTOR': {
       const { alias } = action.payload;
+      const trimmedAlias = alias.trim();
       return {
         ...state,
-        debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== alias.toLowerCase()),
+        debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== trimmedAlias.toLowerCase()),
       };
     }
     default:
@@ -124,9 +127,9 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       } else {
         // Pre-populate with dummy data if nothing is in storage
         const dummyData: Debtor[] = [
-            { alias: 'John Doe', debts: [{ id: '1', amount: 150, date: new Date(Date.now() - 86400000 * 5).toISOString() }, { id: '2', amount: 50, date: new Date(Date.now() - 86400000 * 2).toISOString() }] },
-            { alias: 'Jane Smith', debts: [{ id: '3', amount: 300, date: new Date(Date.now() - 86400000 * 10).toISOString() }] },
-            { alias: 'Peter Jones', debts: [{ id: '4', amount: 75.50, date: new Date(Date.now() - 86400000 * 1).toISOString() }] },
+            { alias: 'JohnDoe', debts: [{ id: '1', amount: 150, date: new Date(Date.now() - 86400000 * 5).toISOString() }, { id: '2', amount: 50, date: new Date(Date.now() - 86400000 * 2).toISOString() }] },
+            { alias: 'JaneSmith', debts: [{ id: '3', amount: 300, date: new Date(Date.now() - 86400000 * 10).toISOString() }] },
+            { alias: 'PeterJones', debts: [{ id: '4', amount: 75.50, date: new Date(Date.now() - 86400000 * 1).toISOString() }] },
         ];
         dispatch({ type: 'SET_DEBTORS', payload: dummyData });
       }
@@ -152,7 +155,8 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const payDebt = (alias: string, amount: number): PayDebtResult => {
-    const debtor = state.debtors.find((d) => d.alias.toLowerCase() === alias.toLowerCase());
+    const trimmedAlias = alias.trim();
+    const debtor = state.debtors.find((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
     if (!debtor) {
         return 'DEBTOR_NOT_FOUND';
     }
@@ -163,7 +167,7 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
         return 'PAYMENT_EXCEEDS_DEBT';
     }
 
-    dispatch({ type: 'PAY_DEBT', payload: { alias, amount } });
+    dispatch({ type: 'PAY_DEBT', payload: { alias: trimmedAlias, amount } });
     return 'SUCCESS';
   };
 
