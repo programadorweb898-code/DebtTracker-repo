@@ -28,7 +28,12 @@ import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const debtorSchema = z.object({
-  alias: z.string().min(1, 'Alias is required').max(50, 'Alias is too long'),
+  alias: z.string()
+    .min(1, 'Alias is required')
+    .max(50, 'Alias is too long')
+    .refine((val) => !/\s/.test(val), {
+        message: 'Alias cannot contain spaces.',
+    }),
   amount: z.coerce.number().positive('Amount must be a positive number'),
 });
 
@@ -84,7 +89,7 @@ export function AddDebtorDialog() {
                 <FormItem>
                   <FormLabel>Alias</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., John Doe" {...field} />
+                    <Input placeholder="e.g., JohnDoe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,7 +102,7 @@ export function AddDebtorDialog() {
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 50.25" step="0.01" {...field} />
+                    <Input type="number" placeholder="e.g., 50.25" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

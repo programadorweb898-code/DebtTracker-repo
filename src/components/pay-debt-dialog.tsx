@@ -28,7 +28,12 @@ import { HandCoins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const payDebtSchema = z.object({
-  alias: z.string().min(1, 'Alias is required').max(50, 'Alias is too long'),
+  alias: z.string()
+    .min(1, 'Alias is required')
+    .max(50, 'Alias is too long')
+    .refine((val) => !/\s/.test(val), {
+        message: 'Alias cannot contain spaces.',
+    }),
   amount: z.coerce.number().positive('Amount must be a positive number'),
 });
 
@@ -100,7 +105,7 @@ export function PayDebtDialog() {
                 <FormItem>
                   <FormLabel>Alias</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., John Doe" {...field} />
+                    <Input placeholder="e.g., JohnDoe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,7 +118,7 @@ export function PayDebtDialog() {
                 <FormItem>
                   <FormLabel>Amount Paid</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 25.00" step="0.01" {...field} />
+                    <Input type="number" placeholder="e.g., 25.00" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
