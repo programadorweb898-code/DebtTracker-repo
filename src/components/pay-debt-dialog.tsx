@@ -24,55 +24,61 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { PlusCircle } from 'lucide-react';
+import { HandCoins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const debtorSchema = z.object({
+const payDebtSchema = z.object({
   alias: z.string().min(1, 'Alias is required').max(50, 'Alias is too long'),
   amount: z.coerce.number().positive('Amount must be a positive number'),
 });
 
-type DebtorFormValues = z.infer<typeof debtorSchema>;
+type PayDebtFormValues = z.infer<typeof payDebtSchema>;
 
-export function AddDebtorDialog() {
+export function PayDebtDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const { addDebt, debtors } = useDebtors();
+  const { payDebt, debtors } = useDebtors();
   const { toast } = useToast();
 
-  const form = useForm<DebtorFormValues>({
-    resolver: zodResolver(debtorSchema),
+  const form = useForm<PayDebtFormValues>({
+    resolver: zodResolver(payDebtSchema),
     defaultValues: {
       alias: '',
       amount: undefined,
     },
   });
 
-  const onSubmit = (data: DebtorFormValues) => {
-    const existingDebtor = debtors.find(d => d.alias.toLowerCase() === data.alias.toLowerCase());
-    addDebt(data.alias, data.amount);
-    toast({
-        title: 'Success!',
-        description: existingDebtor
-            ? `Added $${data.amount} to ${existingDebtor.alias}'s debt.`
-            : `New debtor ${data.alias} added with a debt of $${data.amount}.`,
-    });
-    form.reset();
-    setIsOpen(false);
+  const onSubmit = (data: PayDebtFormValues) => {
+    const debtorExists = payDebt(data.alias, data.amount);
+    
+    if (debtorExists) {
+      toast({
+          title: 'Success!',
+          description: `Registered a payment of $${data.amount} for ${data.alias}.`,
+      });
+      form.reset();
+      setIsOpen(false);
+    } else {
+      toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Debtor with alias "${data.alias}" not found.`,
+      });
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <PlusCircle />
-          Add Debt
+        <Button variant="secondary">
+          <HandCoins />
+          Pay Debt
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Add New Debt</DialogTitle>
+          <DialogTitle className="font-headline">Register a Payment</DialogTitle>
           <DialogDescription>
-            Enter debtor's alias and the amount of debt. If the alias exists, the debt will be added.
+            Enter the debtor's alias and the amount they have paid.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -95,16 +101,16 @@ export function AddDebtorDialog() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Amount Paid</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 50.25" step="0.01" {...field} />
+                    <Input type="number" placeholder="e.g., 25.00" step="0.01" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add Debt</Button>
+              <Button type="submit">Register Payment</Button>
             </DialogFooter>
           </form>
         </Form>

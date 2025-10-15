@@ -1,6 +1,7 @@
 "use client";
 
 import { AddDebtorDialog } from './add-debtor-dialog';
+import { PayDebtDialog } from './pay-debt-dialog';
 import { Coins } from 'lucide-react';
 
 export function AppHeader() {
@@ -12,7 +13,10 @@ export function AppHeader() {
                 DebtTracker
             </h1>
         </div>
-      <AddDebtorDialog />
+      <div className="flex gap-2">
+        <PayDebtDialog />
+        <AddDebtorDialog />
+      </div>
     </header>
   );
 }

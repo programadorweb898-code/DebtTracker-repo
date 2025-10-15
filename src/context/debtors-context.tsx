@@ -11,6 +11,7 @@ interface DebtorsState {
 type Action =
   | { type: 'SET_DEBTORS'; payload: Debtor[] }
   | { type: 'ADD_DEBT'; payload: { alias: string; amount: number } }
+  | { type: 'PAY_DEBT'; payload: { alias: string; amount: number } }
   | { type: 'DELETE_DEBTOR'; payload: { alias: string } };
 
 const initialState: DebtorsState = {
@@ -44,6 +45,29 @@ const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
       }
       return { ...state, debtors: newDebts };
     }
+    case 'PAY_DEBT': {
+        const { alias, amount } = action.payload;
+        const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === alias.toLowerCase());
+
+        if (existingDebtorIndex === -1) {
+            return state; // Debtor not found, do nothing to the state
+        }
+        
+        const newDebtsList = [...state.debtors];
+        const updatedDebtor = { ...newDebtsList[existingDebtorIndex] };
+
+        // Add a negative amount to represent a payment
+        const paymentEntry = {
+            id: crypto.randomUUID(),
+            amount: -amount,
+            date: new Date().toISOString(),
+        };
+
+        updatedDebtor.debts = [...updatedDebtor.debts, paymentEntry];
+        newDebtsList[existingDebtorIndex] = updatedDebtor;
+
+        return { ...state, debtors: newDebtsList };
+    }
     case 'DELETE_DEBTOR': {
       const { alias } = action.payload;
       return {
@@ -60,6 +84,7 @@ const initialContextValue = {
     ...initialState,
     isLoading: true,
     addDebt: (alias: string, amount: number) => {},
+    payDebt: (alias: string, amount: number): boolean => false,
     deleteDebtor: (alias: string) => {},
 };
 
@@ -106,12 +131,21 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
     dispatch({ type: 'ADD_DEBT', payload: { alias, amount } });
   };
 
+  const payDebt = (alias: string, amount: number): boolean => {
+    const debtorExists = state.debtors.some((d) => d.alias.toLowerCase() === alias.toLowerCase());
+    if (debtorExists) {
+        dispatch({ type: 'PAY_DEBT', payload: { alias, amount } });
+        return true;
+    }
+    return false;
+  };
+
   const deleteDebtor = (alias: string) => {
     dispatch({ type: 'DELETE_DEBTOR', payload: { alias } });
   };
 
   return (
-    <DebtorsContext.Provider value={{ debtors: state.debtors, isLoading, addDebt, deleteDebtor }}>
+    <DebtorsContext.Provider value={{ debtors: state.debtors, isLoading, addDebt, payDebt, deleteDebtor }}>
       {children}
     </DebtorsContext.Provider>
   );
