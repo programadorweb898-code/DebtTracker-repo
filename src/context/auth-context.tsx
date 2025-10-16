@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5009/register', {
+    const response = await fetch('http://localhost:5000/register', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
