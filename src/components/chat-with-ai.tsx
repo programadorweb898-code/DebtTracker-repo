@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, Send, User, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { chat, type ChatInput } from '@/ai/flows/chat-flow';
-import { useAuthContext } from '@/context/auth-context';
+import { useDebtors } from '@/context/debtors-context';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -16,14 +16,14 @@ type Message = {
 };
 
 export function ChatWithAI() {
+  const { debtors, isLoading: areDebtorsLoading } = useDebtors();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuthContext();
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || areDebtorsLoading) return;
 
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -34,12 +34,12 @@ export function ChatWithAI() {
       const chatInput: ChatInput = {
         history: messages.map(m => ({
           role: m.role,
-          content: [{ text: m.content }]
+          parts: [{ text: m.content }]
         })),
         prompt: input,
+        debtors: debtors,
       };
 
-      // Call the server action (flow) directly
       const result = await chat(chatInput);
       
       const assistantMessage: Message = {
@@ -61,7 +61,6 @@ export function ChatWithAI() {
   };
   
   useEffect(() => {
-    // Auto-scroll to the bottom when a new message is added
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
       if (viewport) {
@@ -140,9 +139,9 @@ export function ChatWithAI() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Ask a question..."
-                disabled={isLoading}
+                disabled={isLoading || areDebtorsLoading}
               />
-              <Button onClick={handleSend} disabled={isLoading}>
+              <Button onClick={handleSend} disabled={isLoading || areDebtorsLoading}>
                 <Send size={16} />
               </Button>
             </div>

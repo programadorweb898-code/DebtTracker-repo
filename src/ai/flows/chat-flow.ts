@@ -4,12 +4,25 @@
  */
 
 import { ai } from '@/ai/genkit';
+import type { Debtor } from '@/lib/types';
 import { z } from 'genkit';
-import { getDebtorsTool } from '../tools/debtors-tool';
+
+const DebtorSchema = z.object({
+  id: z.string(),
+  alias: z.string(),
+  totalDebt: z.number(),
+  ownerUid: z.string(),
+  debts: z.array(z.object({
+    id: z.string(),
+    amount: z.number(),
+    date: z.string(),
+  })),
+});
 
 const ChatInputSchema = z.object({
   history: z.array(z.any()).describe('The chat history.'),
   prompt: z.string().describe('The user prompt.'),
+  debtors: z.array(DebtorSchema).describe("The list of debtors to use as context."),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
@@ -28,12 +41,17 @@ const chatFlow = ai.defineFlow(
     inputSchema: ChatInputSchema,
     outputSchema: ChatOutputSchema,
   },
-  async ({ history, prompt }) => {
+  async ({ history, prompt, debtors }) => {
     const llmResponse = await ai.generate({
       prompt: prompt,
       history: history,
       model: 'googleai/gemini-2.5-flash',
-      tools: [getDebtorsTool], 
+      system: `You are a financial assistant for the DebtTracker app.
+        The user has provided you with the following list of their debtors.
+        Use this data as the source of truth to answer their questions.
+        Debtors data:
+        ${JSON.stringify(debtors)}
+      `,
       config: {
         // Lower temperature for more factual, data-driven answers
         temperature: 0.2,
