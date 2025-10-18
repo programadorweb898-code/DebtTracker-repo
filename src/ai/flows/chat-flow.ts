@@ -5,7 +5,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { navigateToDebtor, setSortOrder } from '../tools/ui-actions-tool';
 
 const DebtorSchema = z.object({
   id: z.string(),
@@ -26,20 +25,8 @@ const ChatInputSchema = z.object({
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
-
-const SortActionSchema = z.object({
-    type: z.literal('sort'),
-    payload: z.enum(['debt-desc', 'debt-asc', 'alias-asc']),
-});
-
-const NavigateActionSchema = z.object({
-    type: z.literal('navigate'),
-    payload: z.string().describe('The alias of the debtor to navigate to.'),
-});
-
 const ChatOutputSchema = z.object({
   response: z.string().describe('The AI-generated response.'),
-  action: z.optional(z.union([SortActionSchema, NavigateActionSchema])).describe('An optional UI action to perform.'),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
@@ -58,7 +45,6 @@ const chatFlow = ai.defineFlow(
       prompt: prompt,
       history: history,
       model: 'googleai/gemini-2.5-flash',
-      tools: [setSortOrder, navigateToDebtor],
       system: `You are a financial assistant for the DebtTracker app.
         You MUST use the provided data as the single source of truth to answer user questions.
 
@@ -68,53 +54,16 @@ const chatFlow = ai.defineFlow(
             *   **Debt Start Date**: The date of the very first debt record.
             *   **Last Transaction**: The date of the most recent record (debt or payment).
             *   **Last Payment**: The date of the most recent record with a negative amount.
-        3.  **Tool Usage**:
-            *   If the user asks to sort or order the list (e.g., "sort by name", "show me highest debt first"), you MUST use the \`setSortOrder\` tool.
-            *   If the user asks to see details for a specific person (e.g., "show me JohnDoe's details"), you MUST use the \`navigateToDebtor\` tool.
-            *   You can also handle sorting by debt ranges if requested.
-        4.  **Data Integrity**: Do not make up debtors, amounts, or dates. All answers must be derived from the data below.
+        3.  **Data Integrity**: Do not make up debtors, amounts, or dates. All answers must be derived from the data below.
 
         Debtors data:
         ${JSON.stringify(debtors, null, 2)}
       `,
       config: {
-        temperature: 0.1, // Lower temperature for more deterministic, tool-driven responses
+        temperature: 0.1,
       },
-      output: 'prompt', // Tell Genkit to not expect tool responses.
     });
 
-    const textResponse = llmResponse.text;
-    const toolCalls = llmResponse.toolCalls;
-
-    if (toolCalls && toolCalls.length > 0) {
-        // For this use case, we are not executing the tool on the backend.
-        // We are just forwarding the tool's intent to the frontend.
-        // We will only handle the first tool call.
-        const toolCall = toolCalls[0];
-        const toolName = toolCall.tool.name;
-        const toolArgs = toolCall.input;
-
-        if (toolName === 'setSortOrder') {
-            return {
-                response: textResponse || `Ok, sorting by ${toolArgs.sortBy} in ${toolArgs.direction} order.`,
-                action: {
-                    type: 'sort',
-                    payload: `${toolArgs.sortBy}-${toolArgs.direction}`
-                }
-            };
-        }
-
-        if (toolName === 'navigateToDebtor') {
-            return {
-                response: textResponse || `Sure, here are the details for ${toolArgs.alias}.`,
-                action: {
-                    type: 'navigate',
-                    payload: toolArgs.alias,
-                }
-            };
-        }
-    }
-
-    return { response: textResponse };
+    return { response: llmResponse.text };
   }
 );

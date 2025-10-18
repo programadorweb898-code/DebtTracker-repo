@@ -15,16 +15,7 @@ type Message = {
   content: string;
 };
 
-export type AiAction = {
-    type: 'sort' | 'navigate';
-    payload: string;
-}
-
-interface ChatWithAIProps {
-    onAiAction: (action: AiAction) => void;
-}
-
-export function ChatWithAI({ onAiAction }: ChatWithAIProps) {
+export function ChatWithAI() {
   const { debtors, isLoading: areDebtorsLoading } = useDebtors();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -57,10 +48,6 @@ export function ChatWithAI({ onAiAction }: ChatWithAIProps) {
       };
       setMessages((prev) => [...prev, assistantMessage]);
 
-      if (result.action) {
-        onAiAction(result.action);
-      }
-
     } catch (error) {
       console.error('Error with chat flow:', error);
       const errorMessage: Message = {
@@ -90,7 +77,7 @@ export function ChatWithAI({ onAiAction }: ChatWithAIProps) {
           <Bot /> Chat with your Financial Assistant
         </CardTitle>
         <CardDescription>
-          Ask questions about your debtors in plain language. Try "Who owes me the most?" or "Sort by alias".
+          Ask questions about your debtors in plain language. Try "Who owes me the most?".
         </CardDescription>
       </CardHeader>
       <CardContent>
