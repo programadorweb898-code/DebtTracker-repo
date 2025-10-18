@@ -8,6 +8,7 @@ import { StatsCards } from '@/components/stats-cards';
 import { DebtorFilters } from '@/components/debtor-filters';
 import { DebtorList } from '@/components/debtor-list';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AISummary } from './ai-summary';
 
 type SortOption = 'alias-asc' | 'debt-asc' | 'debt-desc';
 
@@ -57,7 +58,10 @@ export function DebtorsDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
             <StatsCards />
+            <AISummary />
+          </div>
         </motion.div>
         
         <motion.div
