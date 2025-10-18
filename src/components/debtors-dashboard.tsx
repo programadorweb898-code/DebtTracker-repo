@@ -54,8 +54,8 @@ export function DebtorsDashboard() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8">
-        <AppHeader />
+       <AppHeader />
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-24">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
