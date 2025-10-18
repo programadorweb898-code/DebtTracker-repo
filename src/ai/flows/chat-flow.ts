@@ -71,6 +71,7 @@ const chatFlow = ai.defineFlow(
       config: {
         temperature: 0.1, // Lower temperature for more deterministic, tool-driven responses
       },
+      output: 'prompt', // Tell Genkit to not expect tool responses.
     });
 
     const textResponse = llmResponse.text;
