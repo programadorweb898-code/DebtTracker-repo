@@ -1,4 +1,4 @@
-'use server';
+"use server";
 /**
  * @fileOverview A Genkit flow for a conversational chat about debtors.
  */
@@ -76,7 +76,7 @@ const chatFlow = ai.defineFlow(
     const textResponse = llmResponse.text;
     const toolCalls = llmResponse.toolCalls;
 
-    if (toolCalls.length > 0) {
+    if (toolCalls && toolCalls.length > 0) {
         // For this use case, we are not executing the tool on the backend.
         // We are just forwarding the tool's intent to the frontend.
         // We will only handle the first tool call.
