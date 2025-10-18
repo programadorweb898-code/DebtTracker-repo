@@ -10,13 +10,11 @@ import { DebtorList } from '@/components/debtor-list';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AISummary } from './ai-summary';
 import { ChatWithAI } from './chat-with-ai';
-import { useRouter } from 'next/navigation';
 
 type SortOption = 'alias-asc' | 'debt-asc' | 'debt-desc';
 
 export function DebtorsDashboard() {
   const { debtors, isLoading } = useDebtors();
-  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('debt-desc');
   const [debtRange, setDebtRange] = useState<[number, number]>([0, Infinity]);
@@ -55,7 +53,7 @@ export function DebtorsDashboard() {
   return (
     <div className="flex flex-col min-h-screen">
        <AppHeader />
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-24">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-36">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
