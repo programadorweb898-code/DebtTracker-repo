@@ -9,6 +9,7 @@ import { DebtorFilters } from '@/components/debtor-filters';
 import { DebtorList } from '@/components/debtor-list';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AISummary } from './ai-summary';
+import { ChatWithAI } from './chat-with-ai';
 
 type SortOption = 'alias-asc' | 'debt-asc' | 'debt-desc';
 
@@ -62,6 +63,15 @@ export function DebtorsDashboard() {
             <StatsCards />
             <AISummary />
           </div>
+        </motion.div>
+
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-8"
+        >
+            <ChatWithAI />
         </motion.div>
         
         <motion.div
