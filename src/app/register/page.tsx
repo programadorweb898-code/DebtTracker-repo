@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/context/auth-context';
+import { useAuthContext } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -19,7 +19,7 @@ const registerSchema = z
     email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
     password: z
       .string()
-      .min(3, 'La contraseña debe tener al menos 3 caracteres.')
+      .min(6, 'La contraseña debe tener al menos 6 caracteres.')
       .max(20, 'La contraseña no puede tener más de 20 caracteres.'),
     confirmPassword: z.string(),
   })
@@ -32,7 +32,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register } = useAuthContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 

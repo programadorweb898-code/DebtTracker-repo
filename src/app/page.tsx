@@ -1,12 +1,12 @@
 "use client";
 
-import { useAuth } from '@/context/auth-context';
+import { useAuthContext } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { DebtorsDashboard } from '@/components/debtors-dashboard';
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {

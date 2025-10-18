@@ -3,16 +3,16 @@
 import { AddDebtorDialog } from './add-debtor-dialog';
 import { PayDebtDialog } from './pay-debt-dialog';
 import { Button } from './ui/button';
-import { useAuth } from '@/context/auth-context';
+import { useAuthContext } from '@/context/auth-context';
 import { Coins, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function AppHeader() {
-  const { logout } = useAuth();
+  const { logout } = useAuthContext();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
 

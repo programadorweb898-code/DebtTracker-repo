@@ -1,95 +1,89 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
-interface User {
-  email: string;
-  token: string;
-}
+import React, { createContext, useContext, useCallback } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface AuthContextType {
-  user: User | null;
+  user: any; // Using `any` for simplicity, but can be typed to Firebase User
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<any>;
+  register: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_STORAGE_KEY = 'debt-tracker-auth';
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user, isUserLoading, userError } = useUser();
 
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        return await signInWithEmailAndPassword(auth, email, password);
+      } catch (error: any) {
+        // Firebase provides specific error codes
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          throw new Error('Invalid email or password.');
+        }
+        throw new Error(error.message || 'An unknown error occurred during login.');
       }
-    } catch (error) {
-      console.error("Failed to load user from localStorage", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [auth]
+  );
 
-  const login = useCallback(async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5000/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const register = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Create a user profile document in Firestore
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userProfile = {
+          uid: user.uid,
+          email: user.email,
+          createdAt: new Date().toISOString(),
+        };
+        
+        // Use non-blocking write
+        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
-    const data = await response.json();
+        return userCredential;
+      } catch (error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+          throw new Error('This email address is already in use.');
+        }
+        throw new Error(error.message || 'An unknown error occurred during registration.');
+      }
+    },
+    [auth, firestore]
+  );
 
-    if (!response.ok) {
-      throw new Error(data.message || 'Error en el inicio de sesión');
-    }
-
-    const newUser: User = { email, token: data.token };
-    setUser(newUser);
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(newUser));
-  }, []);
-
-  const register = useCallback(async (email: string, password: string) => {
-    const response = await fetch('http://localhost:5000/register', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username: email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || 'Error en el registro');
-    }
-  }, []);
-
-
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  }, []);
+  const logout = useCallback(async () => {
+    await signOut(auth);
+  }, [auth]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading: isUserLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuthContext must be used within an AuthProvider');
   }
   return context;
 };
