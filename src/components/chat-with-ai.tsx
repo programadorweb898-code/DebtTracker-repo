@@ -31,8 +31,6 @@ export function ChatWithAI() {
     setIsLoading(true);
 
     try {
-      const idToken = await user?.getIdToken();
-
       const chatInput: ChatInput = {
         history: messages.map(m => ({
           role: m.role,
@@ -41,23 +39,8 @@ export function ChatWithAI() {
         prompt: input,
       };
 
-      // This is a way to pass auth to server actions
-      const headers = { 'Authorization': `Bearer ${idToken}` };
-      
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...headers,
-        },
-        body: JSON.stringify(chatInput),
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const result = await response.json();
+      // Call the server action (flow) directly
+      const result = await chat(chatInput);
       
       const assistantMessage: Message = {
         role: 'assistant',

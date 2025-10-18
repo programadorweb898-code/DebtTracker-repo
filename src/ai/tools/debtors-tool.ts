@@ -1,29 +1,14 @@
 'use server';
 /**
  * @fileOverview A Genkit tool for fetching debtor data from Firestore.
+ * This is currently a placeholder and not fully implemented for client-side usage.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from 'firebase-admin/firestore';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { DecodedIdToken } from 'firebase-admin/auth';
-import { headers } from 'next/headers';
-
-// Initialize Firebase Admin SDK if not already initialized
-let adminApp: App;
-if (!getApps().length) {
-  adminApp = initializeApp();
-} else {
-  adminApp = getApps()[0];
-}
-
-const db = getFirestore(adminApp);
+// Note: Direct firestore access from a tool like this would typically be done
+// on a secure backend, not exposed directly via server actions without
+// proper authentication and security enforcement. The firebase-admin SDK
+// is not suitable for this architecture where actions are invoked from the client.
 
 // Define output schema for the tool
 const DebtorSchema = z.object({
@@ -42,27 +27,6 @@ const DebtorSchema = z.object({
 
 const DebtorsToolOutputSchema = z.array(DebtorSchema);
 
-// This function gets the currently logged-in user's UID.
-// It's a placeholder and in a real app would involve securely getting the user session.
-async function getCurrentUserId(): Promise<string | null> {
-  const authHeader = headers().get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    console.warn('No Firebase Auth Bearer token found in headers.');
-    return null;
-  }
-  const idToken = authHeader.substring(7);
-
-  try {
-    const decodedToken: DecodedIdToken = await getApps()[0]
-      .auth()
-      .verifyIdToken(idToken, true);
-    return decodedToken.uid;
-  } catch (error) {
-    console.error('Error verifying Firebase ID token:', error);
-    return null;
-  }
-}
-
 export const getDebtorsTool = ai.defineTool(
   {
     name: 'getDebtorsTool',
@@ -71,29 +35,14 @@ export const getDebtorsTool = ai.defineTool(
     outputSchema: DebtorsToolOutputSchema,
   },
   async () => {
-    console.log('getDebtorsTool called');
-    const userId = await getCurrentUserId();
-    if (!userId) {
-      console.log('No user ID found, returning empty array.');
-      return [];
-    }
-    console.log(`Fetching debtors for user: ${userId}`);
-    const debtorsColRef = collection(db, 'debtors');
-    const q = query(debtorsColRef, where('ownerUid', '==', userId));
-
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      console.log('No debtors found for this user.');
-      return [];
-    }
-
-    const debtors = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    console.log(`Found ${debtors.length} debtors.`);
-    return debtors as z.infer<typeof DebtorsToolOutputSchema>;
+    // This is a placeholder. In a real-world scenario, you would need a secure way
+    // to get the current user's data. Since we are calling this from the client-side
+    // server action, we can't use firebase-admin.
+    // The correct approach would be to pass the user's data to the flow
+    // or have the flow call another service that can securely access data.
+    console.log(
+      'getDebtorsTool called, but is not implemented for this client-side flow architecture.'
+    );
+    return [];
   }
 );

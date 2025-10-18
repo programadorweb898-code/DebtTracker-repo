@@ -7,13 +7,13 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getDebtorsTool } from '../tools/debtors-tool';
 
-export const ChatInputSchema = z.object({
+const ChatInputSchema = z.object({
   history: z.array(z.any()).describe('The chat history.'),
   prompt: z.string().describe('The user prompt.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
-export const ChatOutputSchema = z.object({
+const ChatOutputSchema = z.object({
   response: z.string().describe('The AI-generated response.'),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
@@ -32,13 +32,15 @@ const chatFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: [...history, { role: 'user', content: [{ text: prompt }] }],
       model: 'googleai/gemini-2.5-flash',
-      tools: [getDebtorsTool],
+      // The tool is available but the model will decide if it needs to use it.
+      // We will remove it for now as it is not correctly implemented.
+      // tools: [getDebtorsTool], 
       config: {
         // Lower temperature for more factual, data-driven answers
         temperature: 0.2,
       },
     });
 
-    return { response: llmResponse.text() };
+    return { response: llmResponse.text };
   }
 );
