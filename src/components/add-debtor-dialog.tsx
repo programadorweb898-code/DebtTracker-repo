@@ -42,27 +42,18 @@ type DebtorFormValues = z.infer<typeof debtorSchema>;
 
 export function AddDebtorDialog() {
   const [isOpen, setIsOpen] = useState(false);
-  const { addDebt, debtors } = useDebtors();
-  const { toast } = useToast();
+  const { addDebt } = useDebtors();
 
   const form = useForm<DebtorFormValues>({
     resolver: zodResolver(debtorSchema),
     defaultValues: {
       alias: '',
-      amount: '' as any,
+      amount: undefined,
     },
   });
 
-  const onSubmit = (data: DebtorFormValues) => {
-    const trimmedAlias = data.alias.trim();
-    const existingDebtor = debtors.find(d => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
-    addDebt(trimmedAlias, data.amount);
-    toast({
-        title: 'Success!',
-        description: existingDebtor
-            ? `Added $${data.amount} to ${existingDebtor.alias}'s debt.`
-            : `New debtor ${trimmedAlias} added with a debt of $${data.amount}.`,
-    });
+  const onSubmit = async (data: DebtorFormValues) => {
+    await addDebt(data.alias, data.amount);
     form.reset();
     setIsOpen(false);
   };
@@ -111,7 +102,9 @@ export function AddDebtorDialog() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Add Debt</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Adding..." : "Add Debt"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/use-toast';
 
 interface DebtorCardProps {
   debtor: Debtor;
@@ -25,9 +24,6 @@ interface DebtorCardProps {
 
 export function DebtorCard({ debtor }: DebtorCardProps) {
   const { deleteDebtor } = useDebtors();
-  const { toast } = useToast();
-
-  const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -41,12 +37,7 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
     : null;
 
   const handleSettleDebt = () => {
-    deleteDebtor(debtor.alias);
-    toast({
-        title: 'Debt Settled!',
-        description: `${debtor.alias} has been removed from the list.`,
-        variant: 'default',
-    });
+    deleteDebtor(debtor.id);
   };
 
   return (
@@ -56,7 +47,7 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
         {lastTransaction && <CardDescription>Last transaction on {new Date(lastTransaction.date).toLocaleDateString()}</CardDescription>}
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-4xl font-bold text-destructive">{formatCurrency(totalDebt)}</p>
+        <p className="text-4xl font-bold text-destructive">{formatCurrency(debtor.totalDebt)}</p>
         <p className="text-sm text-muted-foreground">Total outstanding debt</p>
       </CardContent>
       <CardFooter className="flex justify-between gap-2">

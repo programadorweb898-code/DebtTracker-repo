@@ -28,21 +28,18 @@ export function DebtorsDashboard() {
 
     const [minDebt, maxDebt] = debtRange;
     filtered = filtered.filter((d) => {
-      const totalDebt = d.debts.reduce((sum, debt) => sum + debt.amount, 0);
+      const totalDebt = d.totalDebt;
       const isAfterMin = minDebt > 0 ? totalDebt >= minDebt : true;
       const isBeforeMax = maxDebt !== Infinity ? totalDebt <= maxDebt : true;
       return isAfterMin && isBeforeMax;
     });
 
     return [...filtered].sort((a, b) => {
-      const totalDebtA = a.debts.reduce((sum, debt) => sum + debt.amount, 0);
-      const totalDebtB = b.debts.reduce((sum, debt) => sum + debt.amount, 0);
-
       switch (sortOption) {
         case 'debt-asc':
-          return totalDebtA - totalDebtB;
+          return a.totalDebt - b.totalDebt;
         case 'debt-desc':
-          return totalDebtB - totalDebtA;
+          return b.totalDebt - a.totalDebt;
         case 'alias-asc':
           return a.alias.localeCompare(b.alias);
         default:
@@ -95,4 +92,3 @@ export function DebtorsDashboard() {
     </div>
   );
 }
-

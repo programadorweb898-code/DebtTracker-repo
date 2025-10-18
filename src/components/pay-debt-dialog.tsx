@@ -49,20 +49,15 @@ export function PayDebtDialog() {
     resolver: zodResolver(payDebtSchema),
     defaultValues: {
       alias: '',
-      amount: '' as any,
+      amount: undefined,
     },
   });
 
-  const onSubmit = (data: PayDebtFormValues) => {
-    const trimmedAlias = data.alias.trim();
-    const result = payDebt(trimmedAlias, data.amount);
+  const onSubmit = async (data: PayDebtFormValues) => {
+    const result = await payDebt(data.alias, data.amount);
     
     switch (result) {
       case 'SUCCESS':
-        toast({
-            title: 'Success!',
-            description: `Registered a payment of $${data.amount} for ${trimmedAlias}.`,
-        });
         form.reset();
         setIsOpen(false);
         break;
@@ -70,14 +65,14 @@ export function PayDebtDialog() {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: `Debtor with alias "${trimmedAlias}" not found.`,
+            description: `Debtor with alias "${data.alias}" not found.`,
         });
         break;
       case 'PAYMENT_EXCEEDS_DEBT':
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: `Payment amount exceeds the total debt for ${trimmedAlias}.`,
+          description: `Payment amount exceeds the total debt for ${data.alias}.`,
         });
         break;
     }
@@ -127,7 +122,9 @@ export function PayDebtDialog() {
               )}
             />
             <DialogFooter>
-              <Button type="submit">Register Payment</Button>
+               <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Processing..." : "Register Payment"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

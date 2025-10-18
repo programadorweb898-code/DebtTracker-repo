@@ -5,6 +5,9 @@ export type Debt = {
 };
 
 export type Debtor = {
-  alias: string; // Unique identifier
+  id: string; // Document ID from Firestore
+  alias: string;
+  totalDebt: number;
+  ownerUid: string;
   debts: Debt[];
 };

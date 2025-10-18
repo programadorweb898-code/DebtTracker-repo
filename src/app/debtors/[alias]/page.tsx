@@ -7,23 +7,31 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, User, Landmark, Calendar } from 'lucide-react';
+import { useMemo } from 'react';
 
 export default function DebtorDetailPage() {
   const params = useParams();
   const { debtors, isLoading } = useDebtors();
   
+  const alias = useMemo(() => typeof params.alias === 'string' ? decodeURIComponent(params.alias) : '', [params.alias]);
+  
+  const debtor = useMemo(() => {
+    if (isLoading || !debtors) return null;
+    return debtors.find((d) => d.alias === alias);
+  }, [debtors, isLoading, alias]);
+
+
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   
-  const alias = typeof params.alias === 'string' ? decodeURIComponent(params.alias) : '';
-  const debtor = debtors.find((d) => d.alias === alias);
-
   if (!debtor) {
-    notFound();
+    // We need to wait for loading to finish before we can say notFound
+    if (!isLoading) {
+      notFound();
+    }
+    return null; // Or a skeleton loader
   }
-
-  const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -50,7 +58,7 @@ export default function DebtorDetailPage() {
         <CardContent>
           <div className="flex items-center gap-2">
             <Landmark className="h-6 w-6 text-muted-foreground" />
-            <p className="text-2xl font-bold">{formatCurrency(totalDebt)} <span className="text-sm font-normal text-muted-foreground">Total Debt</span></p>
+            <p className="text-2xl font-bold">{formatCurrency(debtor.totalDebt)} <span className="text-sm font-normal text-muted-foreground">Total Debt</span></p>
           </div>
           <div className="flex items-center gap-2 mt-2">
             <Calendar className="h-6 w-6 text-muted-foreground" />
@@ -61,13 +69,14 @@ export default function DebtorDetailPage() {
       
       <Card>
         <CardHeader>
-            <CardTitle>Debt History</CardTitle>
+            <CardTitle>Transaction History</CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
                 <TableHeader>
                 <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
                 </TableHeader>
@@ -75,7 +84,16 @@ export default function DebtorDetailPage() {
                 {debtor.debts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((debt) => (
                     <TableRow key={debt.id}>
                     <TableCell>{new Date(debt.date).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(debt.amount)}</TableCell>
+                    <TableCell>
+                      {debt.amount > 0 ? (
+                        <span className="text-destructive">Debt</span>
+                      ) : (
+                        <span className="text-green-600">Payment</span>
+                      )}
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${debt.amount > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                      {formatCurrency(Math.abs(debt.amount))}
+                    </TableCell>
                     </TableRow>
                 ))}
                 </TableBody>

@@ -23,63 +23,58 @@
       "required": ["uid", "email", "createdAt"]
     },
     "Debtor": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Debtor",
       "type": "object",
       "description": "Represents a debtor with their associated debt information.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Debtor entity."
-        },
         "alias": {
           "type": "string",
-          "description": "Unique alias for the debtor. This must be unique across all debtors."
+          "description": "Unique alias for the debtor, scoped to the owner."
         },
         "totalDebt": {
           "type": "number",
-          "description": "The total amount of debt owed by the debtor."
+          "description": "The total cumulative amount of debt owed by the debtor."
         },
         "ownerUid": {
           "type": "string",
           "description": "The UID of the user who owns this debtor record."
+        },
+        "debts": {
+            "type": "array",
+            "description": "A list of individual debt/payment records.",
+            "items": {
+                "$ref": "#/entities/DebtRecord"
+            }
         }
       },
       "required": [
-        "id",
         "alias",
         "totalDebt",
-        "ownerUid"
+        "ownerUid",
+        "debts"
       ]
     },
     "DebtRecord": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "DebtRecord",
       "type": "object",
-      "description": "Represents a single instance of debt incurred by a debtor.",
+      "description": "Represents a single transaction (debt or payment) for a debtor.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the DebtRecord entity."
-        },
-        "debtorId": {
-          "type": "string",
-          "description": "Reference to Debtor. (Relationship: Debtor 1:N DebtRecord).",
-          "format": "uuid"
+          "description": "Unique identifier for the debt record."
         },
         "amount": {
           "type": "number",
-          "description": "The amount of debt for this specific record."
+          "description": "The amount of the transaction. Positive for debt, negative for payment."
         },
         "date": {
           "type": "string",
-          "description": "The date when the debt was incurred.",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "The date when the transaction occurred."
         }
       },
       "required": [
         "id",
-        "debtorId",
         "amount",
         "date"
       ]
@@ -91,15 +86,15 @@
     ]
   },
   "firestore": {
-    "structure": [
+     "structure": [
       {
         "path": "/users/{userId}",
         "definition": {
-            "entityName": "UserProfile",
-            "schema": {
-                "$ref": "#/backend/entities/UserProfile"
-            },
-            "description": "Collection for storing user profile information."
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/entities/UserProfile"
+          },
+          "description": "Stores public information for a user."
         }
       },
       {
@@ -107,38 +102,11 @@
         "definition": {
           "entityName": "Debtor",
           "schema": {
-            "$ref": "#/backend/entities/Debtor"
+            "$ref": "#/entities/Debtor"
           },
-          "description": "Collection for storing debtor information. Includes 'id', 'alias', and 'totalDebt'.",
-          "params": [
-            {
-              "name": "debtorId",
-              "description": "The unique identifier for the debtor."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/debtors/{debtorId}/debtRecords/{debtRecordId}",
-        "definition": {
-          "entityName": "DebtRecord",
-          "schema": {
-            "$ref": "#/backend/entities/DebtRecord"
-          },
-          "description": "Subcollection for storing individual debt records associated with a debtor. Includes denormalized 'debtorId' for authorization independence. Includes 'amount' and 'date'.",
-          "params": [
-            {
-              "name": "debtorId",
-              "description": "The unique identifier for the debtor."
-            },
-            {
-              "name": "debtRecordId",
-              "description": "The unique identifier for the debt record."
-            }
-          ]
+          "description": "Stores debtor documents, each containing an array of their debt records."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to manage debtor information and their associated debt records. It utilizes a path-based ownership model and denormalization to ensure authorization independence, enabling secure and scalable operations. The structure includes collections for debtors and their debt records, ensuring proper isolation for security rules and efficient data retrieval.\n\n1.  **Debtors Collection (`/debtors/{debtorId}`):** This collection stores the main debtor information. Each document represents a single debtor. Security rules here will focus on who can create, read, update, and delete debtor profiles.\n\n2.  **DebtRecords Subcollection (`/debtors/{debtorId}/debtRecords/{debtRecordId}`):** This subcollection stores individual debt records associated with a specific debtor. By nesting this under the `/debtors/{debtorId}` path, we establish a clear ownership hierarchy. Importantly, `debtorId` is denormalized into each `DebtRecord` document, removing authorization dependencies on parent documents.\n\n**Authorization Independence:**\n*   The structure avoids using `get()` calls in security rules by denormalizing the `debtorId` into the `DebtRecord` documents. This allows security rules for the `debtRecords` collection to directly validate the `debtorId` against the `request.params.debtorId`, ensuring that only authorized users (if applicable) can modify the debt records.\n\n**QAPs (Rules are not Filters):**\n*   The segregation of debtors and debt records into separate collections, with the debt records nested under the debtors, allows for secure `list` operations. Security rules can be applied to the `debtors` collection to control who can list debtors, and the `debtRecords` collection to control access to individual debt records.\n\n**Data Integrity:**\n*   The structure supports data integrity by enforcing the uniqueness of debtor aliases within the security rules. This is critical for maintaining the integrity of the debtor data."
+    ]
   }
 }

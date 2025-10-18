@@ -9,10 +9,7 @@ export function StatsCards() {
   const { debtors, isLoading } = useDebtors();
 
   const totalDebtors = debtors.length;
-  const totalDebt = debtors.reduce((acc, debtor) => {
-    const debtorTotal = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
-    return acc + debtorTotal;
-  }, 0);
+  const totalDebt = debtors.reduce((acc, debtor) => acc + debtor.totalDebt, 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

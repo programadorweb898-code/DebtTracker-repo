@@ -1,185 +1,195 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
-import type { Debtor } from '@/lib/types';
+import React, { createContext, useContext, useMemo } from 'react';
+import {
+  collection,
+  query,
+  where,
+  addDoc,
+  getDocs,
+  writeBatch,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from 'firebase/firestore';
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import type { Debtor, Debt } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
-interface DebtorsState {
+type PayDebtResult = 'SUCCESS' | 'DEBTOR_NOT_FOUND' | 'PAYMENT_EXCEEDS_DEBT';
+
+interface DebtorsContextValue {
   debtors: Debtor[];
+  isLoading: boolean;
+  addDebt: (alias: string, amount: number) => Promise<void>;
+  payDebt: (alias: string, amount: number) => Promise<PayDebtResult>;
+  deleteDebtor: (debtorId: string) => Promise<void>;
 }
 
-type Action =
-  | { type: 'SET_DEBTORS'; payload: Debtor[] }
-  | { type: 'ADD_DEBT'; payload: { alias: string; amount: number } }
-  | { type: 'PAY_DEBT'; payload: { alias: string; amount: number } }
-  | { type: 'DELETE_DEBTOR'; payload: { alias: string } };
+const DebtorsContext = createContext<DebtorsContextValue | undefined>(undefined);
 
-const initialState: DebtorsState = {
-  debtors: [],
-};
+export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
 
-const debtorsReducer = (state: DebtorsState, action: Action): DebtorsState => {
-  switch (action.type) {
-    case 'SET_DEBTORS':
-      return { ...state, debtors: action.payload };
-    case 'ADD_DEBT': {
-      const { alias, amount } = action.payload;
-      const trimmedAlias = alias.trim();
-      const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
-      const newDebts = [...state.debtors];
+  const debtorsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'debtors'), where('ownerUid', '==', user.uid));
+  }, [firestore, user]);
 
-      const newDebt = {
+  const { data: debtors, isLoading } = useCollection<Debtor>(debtorsQuery);
+
+  const addDebt = async (alias: string, amount: number) => {
+    if (!user) return;
+    const trimmedAlias = alias.trim();
+    const debtorsColRef = collection(firestore, 'debtors');
+    const q = query(debtorsColRef, where('alias', '==', trimmedAlias), where('ownerUid', '==', user.uid));
+
+    try {
+      const querySnapshot = await getDocs(q);
+      const newDebtEntry: Debt = {
         id: crypto.randomUUID(),
         amount,
         date: new Date().toISOString(),
       };
 
-      if (existingDebtorIndex > -1) {
-        const updatedDebtor = { ...newDebts[existingDebtorIndex] };
-        updatedDebtor.debts = [...updatedDebtor.debts, newDebt];
-        newDebts[existingDebtorIndex] = updatedDebtor;
+      if (!querySnapshot.empty) {
+        // Debtor exists, update it
+        const existingDebtorDoc = querySnapshot.docs[0];
+        const existingDebtorData = existingDebtorDoc.data() as Debtor;
+        const updatedDebts = [...existingDebtorData.debts, newDebtEntry];
+        const newTotalDebt = existingDebtorData.totalDebt + amount;
+
+        await updateDoc(existingDebtorDoc.ref, {
+          debts: updatedDebts,
+          totalDebt: newTotalDebt,
+        });
+        toast({
+          title: 'Success!',
+          description: `Added ${formatCurrency(amount)} to ${trimmedAlias}'s debt.`,
+        });
       } else {
-        newDebts.push({
+        // Debtor doesn't exist, create new
+        await addDoc(debtorsColRef, {
           alias: trimmedAlias,
-          debts: [newDebt],
+          ownerUid: user.uid,
+          totalDebt: amount,
+          debts: [newDebtEntry],
+        });
+        toast({
+          title: 'Success!',
+          description: `New debtor ${trimmedAlias} added with a debt of ${formatCurrency(amount)}.`,
         });
       }
-      return { ...state, debtors: newDebts };
-    }
-    case 'PAY_DEBT': {
-        const { alias, amount } = action.payload;
-        const trimmedAlias = alias.trim();
-        const existingDebtorIndex = state.debtors.findIndex((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
-
-        if (existingDebtorIndex === -1) {
-            return state; 
-        }
-        
-        const debtor = state.debtors[existingDebtorIndex];
-        const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
-        
-        if (amount > totalDebt) {
-          // This case is handled in the component, but as a fallback
-          return state;
-        }
-
-        const newDebtsList = [...state.debtors];
-        const updatedDebtor = { ...newDebtsList[existingDebtorIndex] };
-
-        const paymentEntry = {
-            id: crypto.randomUUID(),
-            amount: -amount,
-            date: new Date().toISOString(),
-        };
-
-        updatedDebtor.debts = [...updatedDebtor.debts, paymentEntry];
-
-        const newTotalDebt = totalDebt - amount;
-        
-        if (newTotalDebt <= 0) {
-            // Settle the debt and remove the debtor
-            return {
-                ...state,
-                debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== trimmedAlias.toLowerCase()),
-            };
-        } else {
-            // Update the debtor's debt list
-            newDebtsList[existingDebtorIndex] = updatedDebtor;
-            return { ...state, debtors: newDebtsList };
-        }
-    }
-    case 'DELETE_DEBTOR': {
-      const { alias } = action.payload;
-      const trimmedAlias = alias.trim();
-      return {
-        ...state,
-        debtors: state.debtors.filter((d) => d.alias.toLowerCase() !== trimmedAlias.toLowerCase()),
-      };
-    }
-    default:
-      return state;
-  }
-};
-
-type PayDebtResult = 'SUCCESS' | 'DEBTOR_NOT_FOUND' | 'PAYMENT_EXCEEDS_DEBT';
-
-const initialContextValue = {
-    ...initialState,
-    isLoading: true,
-    addDebt: (alias: string, amount: number) => {},
-    payDebt: (alias: string, amount: number): PayDebtResult => 'DEBTOR_NOT_FOUND',
-    deleteDebtor: (alias: string) => {},
-};
-
-const DebtorsContext = createContext(initialContextValue);
-
-const DEBTORS_STORAGE_KEY = 'debt-tracker-app';
-
-export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
-  const [state, dispatch] = useReducer(debtorsReducer, initialState);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    try {
-      const storedDebtors = localStorage.getItem(DEBTORS_STORAGE_KEY);
-      if (storedDebtors) {
-        dispatch({ type: 'SET_DEBTORS', payload: JSON.parse(storedDebtors) });
-      } else {
-        // Pre-populate with dummy data if nothing is in storage
-        const dummyData: Debtor[] = [
-            { alias: 'JohnDoe', debts: [{ id: '1', amount: 150, date: new Date(Date.now() - 86400000 * 5).toISOString() }, { id: '2', amount: 50, date: new Date(Date.now() - 86400000 * 2).toISOString() }] },
-            { alias: 'JaneSmith', debts: [{ id: '3', amount: 300, date: new Date(Date.now() - 86400000 * 10).toISOString() }] },
-            { alias: 'PeterJones', debts: [{ id: '4', amount: 75.50, date: new Date(Date.now() - 86400000 * 1).toISOString() }] },
-        ];
-        dispatch({ type: 'SET_DEBTORS', payload: dummyData });
-      }
     } catch (error) {
-      console.error("Failed to load debtors from localStorage", error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error adding debt:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not add debt. Please try again.',
+      });
     }
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading) {
-        try {
-            localStorage.setItem(DEBTORS_STORAGE_KEY, JSON.stringify(state.debtors));
-        } catch (error) {
-            console.error("Failed to save debtors to localStorage", error);
-        }
-    }
-  }, [state.debtors, isLoading]);
-
-  const addDebt = (alias: string, amount: number) => {
-    dispatch({ type: 'ADD_DEBT', payload: { alias, amount } });
   };
 
-  const payDebt = (alias: string, amount: number): PayDebtResult => {
+  const payDebt = async (alias: string, amount: number): Promise<PayDebtResult> => {
+    if (!user) return 'DEBTOR_NOT_FOUND';
     const trimmedAlias = alias.trim();
-    const debtor = state.debtors.find((d) => d.alias.toLowerCase() === trimmedAlias.toLowerCase());
-    if (!debtor) {
+    const debtorsColRef = collection(firestore, 'debtors');
+    const q = query(debtorsColRef, where('alias', '==', trimmedAlias), where('ownerUid', '==', user.uid));
+
+    try {
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
         return 'DEBTOR_NOT_FOUND';
-    }
+      }
 
-    const totalDebt = debtor.debts.reduce((sum, debt) => sum + debt.amount, 0);
+      const debtorDoc = querySnapshot.docs[0];
+      const debtorData = debtorDoc.data() as Debtor;
 
-    if (amount > totalDebt) {
+      if (amount > debtorData.totalDebt) {
         return 'PAYMENT_EXCEEDS_DEBT';
+      }
+
+      const paymentEntry: Debt = {
+        id: crypto.randomUUID(),
+        amount: -amount,
+        date: new Date().toISOString(),
+      };
+
+      const newTotalDebt = debtorData.totalDebt - amount;
+
+      if (newTotalDebt <= 0) {
+        // Debt is settled, delete the debtor
+        await deleteDoc(debtorDoc.ref);
+        toast({
+          title: 'Debt Settled!',
+          description: `${debtorData.alias}'s debt has been fully paid and removed.`,
+        });
+      } else {
+        // Update debt
+        const updatedDebts = [...debtorData.debts, paymentEntry];
+        await updateDoc(debtorDoc.ref, {
+          debts: updatedDebts,
+          totalDebt: newTotalDebt,
+        });
+        toast({
+          title: 'Payment Registered!',
+          description: `Registered a payment of ${formatCurrency(amount)} for ${debtorData.alias}.`,
+        });
+      }
+      return 'SUCCESS';
+    } catch (error) {
+      console.error('Error paying debt:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not process payment. Please try again.',
+      });
+      // This is a generic return, might need more specific error handling
+      return 'DEBTOR_NOT_FOUND';
     }
-
-    dispatch({ type: 'PAY_DEBT', payload: { alias: trimmedAlias, amount } });
-    return 'SUCCESS';
   };
 
-  const deleteDebtor = (alias: string) => {
-    dispatch({ type: 'DELETE_DEBTOR', payload: { alias } });
+  const deleteDebtor = async (debtorId: string) => {
+    if (!user) return;
+    try {
+      const docRef = doc(firestore, 'debtors', debtorId);
+      await deleteDoc(docRef);
+      toast({
+        title: 'Debtor Removed',
+        description: 'The debtor has been successfully removed.',
+      });
+    } catch (error) {
+      console.error('Error deleting debtor:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not remove the debtor. Please try again.',
+      });
+    }
+  };
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
-  return (
-    <DebtorsContext.Provider value={{ debtors: state.debtors, isLoading, addDebt, payDebt, deleteDebtor }}>
-      {children}
-    </DebtorsContext.Provider>
+  const value = useMemo(
+    () => ({
+      debtors: debtors || [],
+      isLoading,
+      addDebt,
+      payDebt,
+      deleteDebtor,
+    }),
+    [debtors, isLoading, user]
   );
+
+  return <DebtorsContext.Provider value={value}>{children}</DebtorsContext.Provider>;
 };
 
 export const useDebtors = () => {
