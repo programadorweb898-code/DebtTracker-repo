@@ -1,97 +1,84 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for debtors and their debt records.
- * All data is nested under /debtors/{debtorId}/debtRecords/{debtRecordId}, ensuring a clear ownership hierarchy.
+ * @description This ruleset enforces a strict user-ownership model for user profiles and debtors.
+ * All data is nested under /users/{userId} and /debtors/{debtorId}, with access controlled by the authenticated user's UID.
  *
- * Core Philosophy:
- *  - Enforce strong ownership: Only the owner (identified by debtorId) can create, read, update, or delete debtors and debt records.
- *  - Authorization Independence: Denormalize debtorId into each DebtRecord document to allow validation without get() calls.
- *  - Segregation of data: Debtors and debt records are stored in separate collections to allow secure list operations.
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information (email, UID, creation date).
+ * - /debtors/{debtorId}: Stores debtor information, each containing an array of their debt records.
  *
  * Key Security Decisions:
- *  - Strict ownership: No shared access or roles are implemented.
- *  - Ownership enforcement: Only the user with a matching debtorId can perform operations.
+ * - Users can only create, read, update, and delete their own profile data.
+ * - Users can only create, read, update, and delete their own debtors.
+ * - Listing of all users is disallowed for privacy.
+ *
+ * Denormalization for Authorization:
+ * - Debtors contain an `ownerUid` field, which is used to verify ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Protects the `/debtors` collection, enforcing ownership.
-     * @path /debtors/{debtorId}
-     * @allow (create) - User abc can create a new debtor profile with id 'abc'.
-     *   request.auth.uid == 'abc' and request.resource.data.id == 'abc'
-     * @allow (get, list) - User abc can read debtor profile with id 'abc'.
-     *   request.auth.uid == 'abc' and resource.data.id == 'abc'
-     * @allow (update, delete) - User abc can modify/delete debtor profile with id 'abc'.
-     *   request.auth.uid == 'abc' and resource.data.id == 'abc'
-     * @deny (create) - User def cannot create a new debtor profile with id 'abc'.
-     *   request.auth.uid == 'def' and request.resource.data.id == 'abc'
-     * @deny (update, delete) - User def cannot modify/delete debtor profile with id 'abc'.
-     *   request.auth.uid == 'def' and resource.data.id == 'abc'
-     * @principle Enforces document ownership for writes, restricts access to a user's own data.
+     * @description Manages user profiles. Only the authenticated user can create, read, update, or delete their own profile.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can create their profile with matching UID.
+     * @allow (get) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can read their profile.
+     * @allow (update) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can update their profile.
+     * @allow (delete) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can delete their profile.
+     * @deny (create) User with UID 'otherUserId' cannot create a profile for 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (get) User with UID 'otherUserId' cannot read the profile of 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (update) User with UID 'otherUserId' cannot update the profile of 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (delete) User with UID 'otherUserId' cannot delete the profile of 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @principle Enforces document ownership for all operations.
      */
-    match /debtors/{debtorId} {
-      // Helpers
+    match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(debtorId) {
-        return isSignedIn() && request.auth.uid == debtorId;
+      function isOwner(userId) {
+        return request.auth.uid == userId;
       }
 
-      function isExistingOwner(debtorId) {
-        return isOwner(debtorId) && resource != null;
-      }
-
-      // Read rules
-      allow get: if true;
-      allow list: if isSignedIn();
-
-      // Write rules
-      allow create: if isOwner(debtorId) && request.resource.data.id == debtorId;
-      allow update: if isExistingOwner(debtorId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(debtorId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false; // Listing users is not allowed.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.uid == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.uid == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.uid == userId;
     }
 
     /**
-     * @description Protects the `/debtors/{debtorId}/debtRecords` subcollection, enforcing ownership via debtorId.
-     * @path /debtors/{debtorId}/debtRecords/{debtRecordId}
-     * @allow (create) - User abc can create a new debt record for debtor abc.
-     *   request.auth.uid == 'abc' and request.params.debtorId == 'abc'
-     * @allow (get, list) - User abc can read debt records for debtor abc.
-     *   request.auth.uid == 'abc' and request.params.debtorId == 'abc'
-     * @allow (update, delete) - User abc can modify/delete debt record for debtor abc.
-     *   request.auth.uid == 'abc' and request.params.debtorId == 'abc'
-     * @deny (create) - User def cannot create a new debt record for debtor abc.
-     *   request.auth.uid == 'def' and request.params.debtorId == 'abc'
-     * @deny (update, delete) - User def cannot modify/delete debt record for debtor abc.
-     *   request.auth.uid == 'def' and request.params.debtorId == 'abc'
-     * @principle Enforces document ownership for writes, restricts access to a user's own data.
+     * @description Manages debtors. Only the owner can create, read, update, or delete their debtors.
+     * @path /debtors/{debtorId}
+     * @allow (create) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can create a debtor if they are the owner.
+     * @allow (get) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can read a debtor they own.
+     * @allow (update) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can update a debtor they own.
+     * @allow (delete) User with UID 'm4b2wXC99BVgdEmY9UxZnTev4Rv2' can delete a debtor they own.
+     * @deny (create) User with UID 'otherUserId' cannot create a debtor for 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (get) User with UID 'otherUserId' cannot read a debtor owned by 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (update) User with UID 'otherUserId' cannot update a debtor owned by 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @deny (delete) User with UID 'otherUserId' cannot delete a debtor owned by 'm4b2wXC99BVgdEmY9UxZnTev4Rv2'.
+     * @principle Enforces document ownership based on the `ownerUid` field.
      */
-    match /debtors/{debtorId}/debtRecords/{debtRecordId} {
-      // Helpers
+    match /debtors/{debtorId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(debtorId) {
-        return isSignedIn() && request.auth.uid == debtorId;
+      function isOwner(ownerUid) {
+        return request.auth.uid == ownerUid;
       }
 
-      function isExistingOwner(debtorId) {
-        return isOwner(debtorId) && resource != null;
+      function isExistingOwner(ownerUid) {
+        return isOwner(ownerUid) && resource != null;
       }
 
-      // Read rules
-      allow get: if isOwner(debtorId);
-      allow list: if isOwner(debtorId);
-
-      // Write rules
-      allow create: if isOwner(debtorId) && request.resource.data.debtorId == debtorId;
-      allow update: if isExistingOwner(debtorId) && request.resource.data.debtorId == resource.data.debtorId;
-      allow delete: if isExistingOwner(debtorId);
+      allow get: if isSignedIn() && isOwner(resource.data.ownerUid);
+      allow list: if isSignedIn() && isOwner(request.auth.uid);
+      allow create: if isSignedIn() && isOwner(request.resource.data.ownerUid) && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.ownerUid) && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow delete: if isExistingOwner(resource.data.ownerUid);
     }
   }
 }
