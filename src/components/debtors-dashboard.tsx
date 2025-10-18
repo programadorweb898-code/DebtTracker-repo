@@ -9,12 +9,14 @@ import { DebtorFilters } from '@/components/debtor-filters';
 import { DebtorList } from '@/components/debtor-list';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AISummary } from './ai-summary';
-import { ChatWithAI } from './chat-with-ai';
+import { ChatWithAI, type AiAction } from './chat-with-ai';
+import { useRouter } from 'next/navigation';
 
 type SortOption = 'alias-asc' | 'debt-asc' | 'debt-desc';
 
 export function DebtorsDashboard() {
   const { debtors, isLoading } = useDebtors();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('debt-desc');
   const [debtRange, setDebtRange] = useState<[number, number]>([0, Infinity]);
@@ -50,6 +52,15 @@ export function DebtorsDashboard() {
     });
   }, [debtors, searchTerm, sortOption, debtRange]);
 
+  const handleAiAction = (action: AiAction) => {
+    if (action.type === 'sort') {
+        const newSortOption = action.payload as SortOption;
+        setSortOption(newSortOption);
+    } else if (action.type === 'navigate') {
+        router.push(`/debtors/${action.payload}`);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,7 +82,7 @@ export function DebtorsDashboard() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mb-8"
         >
-            <ChatWithAI />
+            <ChatWithAI onAiAction={handleAiAction} />
         </motion.div>
         
         <motion.div
@@ -81,7 +92,8 @@ export function DebtorsDashboard() {
         >
             <DebtorFilters
               onSearch={setSearchTerm}
-              onSort={setSortOption as (value: string) => void}
+              onSort={(value) => setSortOption(value as SortOption)}
+              sortValue={sortOption}
               onRangeChange={setDebtRange}
               debtorCount={filteredAndSortedDebtors.length}
             />

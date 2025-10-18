@@ -15,6 +15,7 @@ import { Filter, Search, X } from 'lucide-react';
 interface DebtorFiltersProps {
   onSearch: (term: string) => void;
   onSort: (option: string) => void;
+  sortValue: string;
   onRangeChange: (range: [number, number]) => void;
   debtorCount: number;
 }
@@ -22,6 +23,7 @@ interface DebtorFiltersProps {
 export function DebtorFilters({
   onSearch,
   onSort,
+  sortValue,
   onRangeChange,
   debtorCount,
 }: DebtorFiltersProps) {
@@ -57,7 +59,7 @@ export function DebtorFilters({
           />
         </div>
 
-        <Select defaultValue="debt-desc" onValueChange={onSort}>
+        <Select value={sortValue} onValueChange={onSort}>
           <SelectTrigger>
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
