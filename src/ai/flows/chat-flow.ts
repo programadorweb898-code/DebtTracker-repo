@@ -30,11 +30,10 @@ const chatFlow = ai.defineFlow(
   },
   async ({ history, prompt }) => {
     const llmResponse = await ai.generate({
-      prompt: [...history, { role: 'user', content: [{ text: prompt }] }],
+      prompt: prompt,
+      history: history,
       model: 'googleai/gemini-2.5-flash',
-      // The tool is available but the model will decide if it needs to use it.
-      // We will remove it for now as it is not correctly implemented.
-      // tools: [getDebtorsTool], 
+      tools: [getDebtorsTool], 
       config: {
         // Lower temperature for more factual, data-driven answers
         temperature: 0.2,
