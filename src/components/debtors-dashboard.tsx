@@ -10,6 +10,8 @@ import { DebtorList } from '@/components/debtor-list';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AISummary } from './ai-summary';
 import { ChatWithAI } from './chat-with-ai';
+import { PayDebtDialog } from './pay-debt-dialog';
+import { AddDebtorDialog } from './add-debtor-dialog';
 
 type SortOption = 'alias-asc' | 'debt-asc' | 'debt-desc';
 
@@ -53,6 +55,14 @@ export function DebtorsDashboard() {
   return (
     <div className="flex flex-col min-h-screen">
        <AppHeader />
+      {/* Barra de acciones debajo del encabezado */}
+      <div className="fixed top-16 left-0 right-0 z-30 bg-background/90 backdrop-blur-sm border-b py-4">
+        <div className="container mx-auto flex justify-center items-center gap-4">
+          <PayDebtDialog />
+          <AddDebtorDialog />
+        </div>
+      </div>
+       
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-40">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
