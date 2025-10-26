@@ -62,7 +62,7 @@ export function AppHeader() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <DropdownMenuItem>
                     Cerrar Sesión
                   </DropdownMenuItem>
                 </AlertDialogTrigger>
