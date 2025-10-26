@@ -172,9 +172,9 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'USD',
     }).format(amount);
   };
 

@@ -12,9 +12,9 @@ export function StatsCards() {
   const totalDebt = debtors.reduce((acc, debtor) => acc + debtor.totalDebt, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'EUR',
+      currency: 'USD',
     }).format(amount);
   };
 

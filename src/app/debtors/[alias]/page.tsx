@@ -34,9 +34,9 @@ export default function DebtorDetailPage() {
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'EUR', // Cambiado a EUR para el ejemplo en español, puedes ajustarlo
+      currency: 'USD',
     }).format(amount);
   };
 
