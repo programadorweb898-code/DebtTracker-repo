@@ -49,10 +49,10 @@ export function ChatWithAI() {
       setMessages((prev) => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Error with chat flow:', error);
+      console.error('Error con el flujo de chat:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: "Sorry, I'm having trouble connecting to my brain right now. Please try again later.",
+        content: "Lo siento, estoy teniendo problemas para conectarme a mi cerebro en este momento. Por favor, inténtalo de nuevo más tarde.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -74,10 +74,10 @@ export function ChatWithAI() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bot /> Chat with your Financial Assistant
+          <Bot /> Chatea con tu Asistente Financiero
         </CardTitle>
         <CardDescription>
-          Ask questions about your debtors in plain language. Try "Who owes me the most?".
+          Haz preguntas sobre tus deudores en lenguaje sencillo. Prueba con "¿Quién me debe más?".
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -138,7 +138,7 @@ export function ChatWithAI() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Ask a question..."
+                placeholder="Haz una pregunta..."
                 disabled={isLoading || areDebtorsLoading}
               />
               <Button onClick={handleSend} disabled={isLoading || areDebtorsLoading}>

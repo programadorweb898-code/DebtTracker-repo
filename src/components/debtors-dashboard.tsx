@@ -53,7 +53,7 @@ export function DebtorsDashboard() {
   return (
     <div className="flex flex-col min-h-screen">
        <AppHeader />
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-36">
+      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 pt-44">
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -102,7 +102,7 @@ export function DebtorsDashboard() {
         </AnimatePresence>
       </main>
       <footer className="text-center py-4 text-sm text-muted-foreground">
-        <p>Built for a better way to track debts.</p>
+        <p>Construido para una mejor forma de seguir las deudas.</p>
       </footer>
     </div>
   );

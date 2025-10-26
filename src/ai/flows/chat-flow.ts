@@ -19,14 +19,14 @@ const DebtorSchema = z.object({
 });
 
 const ChatInputSchema = z.object({
-  history: z.array(z.any()).describe('The chat history.'),
-  prompt: z.string().describe('The user prompt.'),
-  debtors: z.array(DebtorSchema).describe("The list of debtors to use as context."),
+  history: z.array(z.any()).describe('El historial del chat.'),
+  prompt: z.string().describe('El mensaje del usuario.'),
+  debtors: z.array(DebtorSchema).describe("La lista de deudores para usar como contexto."),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const ChatOutputSchema = z.object({
-  response: z.string().describe('The AI-generated response.'),
+  response: z.string().describe('La respuesta generada por la IA.'),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
@@ -45,18 +45,18 @@ const chatFlow = ai.defineFlow(
       prompt: prompt,
       history: history,
       model: 'googleai/gemini-2.5-flash',
-      system: `You are a financial assistant for the DebtTracker app.
-        You MUST use the provided data as the single source of truth to answer user questions.
+      system: `Eres un asistente financiero para la aplicación DebtTracker.
+        DEBES usar los datos proporcionados como la única fuente de verdad para responder las preguntas de los usuarios.
 
-        Key instructions:
-        1.  **Conversational Context**: Pay close attention to the chat history. If a user asks a follow-up question without naming a debtor (e.g., "how much do they owe?"), assume they are referring to the debtor mentioned in the previous turn.
-        2.  **Data Analysis**: You can answer questions about specific transaction details. For a given debtor, you can determine:
-            *   **Debt Start Date**: The date of the very first debt record.
-            *   **Last Transaction**: The date of the most recent record (debt or payment).
-            *   **Last Payment**: The date of the most recent record with a negative amount.
-        3.  **Data Integrity**: Do not make up debtors, amounts, or dates. All answers must be derived from the data below.
+        Instrucciones clave:
+        1. **Contexto Conversacional**: Presta mucha atención al historial del chat. Si un usuario hace una pregunta de seguimiento sin nombrar a un deudor (por ejemplo, "¿cuánto debe?"), asume que se refiere al deudor mencionado en el turno anterior.
+        2. **Análisis de Datos**: Puedes responder preguntas sobre detalles específicos de transacciones. Para un deudor dado, puedes determinar:
+            * **Fecha de Inicio de la Deuda**: La fecha del primer registro de deuda.
+            * **Última Transacción**: La fecha del registro más reciente (deuda o pago).
+            * **Último Pago**: La fecha del registro más reciente con un monto negativo.
+        3. **Integridad de los Datos**: No inventes deudores, montos o fechas. Todas las respuestas deben derivarse de los datos a continuación.
 
-        Debtors data:
+        Datos de los deudores:
         ${JSON.stringify(debtors, null, 2)}
       `,
       config: {

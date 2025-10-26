@@ -22,7 +22,7 @@ export function AISummary() {
       const result = await summarizeDebts(debtors);
       setSummary(result.summary);
     } catch (error) {
-      console.error('Error generating summary:', error);
+      console.error('Error generando resumen:', error);
       toast({
         variant: 'destructive',
         title: 'Error de IA',

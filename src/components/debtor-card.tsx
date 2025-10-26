@@ -26,9 +26,9 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
   const { deleteDebtor } = useDebtors();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
     }).format(amount);
   };
 
@@ -44,36 +44,36 @@ export function DebtorCard({ debtor }: DebtorCardProps) {
     <Card className="flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
       <CardHeader>
         <CardTitle className="font-headline truncate">{debtor.alias}</CardTitle>
-        {lastTransaction && <CardDescription>Last transaction on {new Date(lastTransaction.date).toLocaleDateString()}</CardDescription>}
+        {lastTransaction && <CardDescription>Última transacción el {new Date(lastTransaction.date).toLocaleDateString('es-ES')}</CardDescription>}
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-4xl font-bold text-destructive">{formatCurrency(debtor.totalDebt)}</p>
-        <p className="text-sm text-muted-foreground">Total outstanding debt</p>
+        <p className="text-sm text-muted-foreground">Deuda total pendiente</p>
       </CardContent>
       <CardFooter className="flex justify-between gap-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm">
-              <Trash2 /> Settle Debt
+              <Trash2 /> Saldar Deuda
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action marks the debt for "{debtor.alias}" as fully paid and will permanently remove them from your list.
+                Esta acción marca la deuda de "{debtor.alias}" como totalmente pagada y la eliminará permanentemente de tu lista.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSettleDebt}>Continue</AlertDialogAction>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleSettleDebt}>Continuar</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
         <Button asChild variant="outline" size="sm">
           <Link href={`/debtors/${encodeURIComponent(debtor.alias)}`}>
-            View Details <ArrowRight />
+            Ver Detalles <ArrowRight />
           </Link>
         </Button>
       </CardFooter>

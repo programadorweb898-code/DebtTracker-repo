@@ -56,7 +56,7 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       };
 
       if (!querySnapshot.empty) {
-        // Debtor exists, update it
+        // El deudor existe, actualizarlo
         const existingDebtorDoc = querySnapshot.docs[0];
         const existingDebtorData = existingDebtorDoc.data() as Debtor;
         const updatedDebts = [...existingDebtorData.debts, newDebtEntry];
@@ -67,11 +67,11 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
           totalDebt: newTotalDebt,
         });
         toast({
-          title: 'Success!',
-          description: `Added ${formatCurrency(amount)} to ${trimmedAlias}'s debt.`,
+          title: '¡Éxito!',
+          description: `Se añadieron ${formatCurrency(amount)} a la deuda de ${trimmedAlias}.`,
         });
       } else {
-        // Debtor doesn't exist, create new
+        // El deudor no existe, crearlo
         await addDoc(debtorsColRef, {
           alias: trimmedAlias,
           ownerUid: user.uid,
@@ -79,16 +79,16 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
           debts: [newDebtEntry],
         });
         toast({
-          title: 'Success!',
-          description: `New debtor ${trimmedAlias} added with a debt of ${formatCurrency(amount)}.`,
+          title: '¡Éxito!',
+          description: `Nuevo deudor ${trimmedAlias} añadido con una deuda de ${formatCurrency(amount)}.`,
         });
       }
     } catch (error) {
-      console.error('Error adding debt:', error);
+      console.error('Error al añadir deuda:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not add debt. Please try again.',
+        description: 'No se pudo añadir la deuda. Por favor, inténtalo de nuevo.',
       });
     }
   };
@@ -121,33 +121,33 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       const newTotalDebt = debtorData.totalDebt - amount;
 
       if (newTotalDebt <= 0) {
-        // Debt is settled, delete the debtor
+        // La deuda está saldada, eliminar al deudor
         await deleteDoc(debtorDoc.ref);
         toast({
-          title: 'Debt Settled!',
-          description: `${debtorData.alias}'s debt has been fully paid and removed.`,
+          title: '¡Deuda Saldada!',
+          description: `La deuda de ${debtorData.alias} ha sido completamente pagada y eliminada.`,
         });
       } else {
-        // Update debt
+        // Actualizar la deuda
         const updatedDebts = [...debtorData.debts, paymentEntry];
         await updateDoc(debtorDoc.ref, {
           debts: updatedDebts,
           totalDebt: newTotalDebt,
         });
         toast({
-          title: 'Payment Registered!',
-          description: `Registered a payment of ${formatCurrency(amount)} for ${debtorData.alias}.`,
+          title: '¡Pago Registrado!',
+          description: `Se registró un pago de ${formatCurrency(amount)} para ${debtorData.alias}.`,
         });
       }
       return 'SUCCESS';
     } catch (error) {
-      console.error('Error paying debt:', error);
+      console.error('Error al pagar la deuda:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not process payment. Please try again.',
+        description: 'No se pudo procesar el pago. Por favor, inténtalo de nuevo.',
       });
-      // This is a generic return, might need more specific error handling
+      // Este es un retorno genérico, podría necesitar un manejo de errores más específico
       return 'DEBTOR_NOT_FOUND';
     }
   };
@@ -158,23 +158,23 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       const docRef = doc(firestore, 'debtors', debtorId);
       await deleteDoc(docRef);
       toast({
-        title: 'Debtor Removed',
-        description: 'The debtor has been successfully removed.',
+        title: 'Deudor Eliminado',
+        description: 'El deudor ha sido eliminado exitosamente.',
       });
     } catch (error) {
-      console.error('Error deleting debtor:', error);
+      console.error('Error al eliminar deudor:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not remove the debtor. Please try again.',
+        description: 'No se pudo eliminar al deudor. Por favor, inténtalo de nuevo.',
       });
     }
   };
   
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
     }).format(amount);
   };
 
@@ -195,7 +195,7 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
 export const useDebtors = () => {
   const context = useContext(DebtorsContext);
   if (context === undefined) {
-    throw new Error('useDebtors must be used within a DebtorsProvider');
+    throw new Error('useDebtors debe ser usado dentro de un DebtorsProvider');
   }
   return context;
 };

@@ -30,12 +30,12 @@ import { useToast } from '@/hooks/use-toast';
 const payDebtSchema = z.object({
   alias: z.string()
     .trim()
-    .min(1, 'Alias is required')
-    .max(50, 'Alias is too long')
+    .min(1, 'El alias es requerido.')
+    .max(50, 'El alias es demasiado largo.')
     .refine((val) => !/\s/.test(val), {
-        message: 'Alias cannot contain spaces.',
+        message: 'El alias no puede contener espacios.',
     }),
-  amount: z.coerce.number().positive('Amount must be a positive number'),
+  amount: z.coerce.number().positive('El monto debe ser un número positivo.'),
 });
 
 type PayDebtFormValues = z.infer<typeof payDebtSchema>;
@@ -65,14 +65,14 @@ export function PayDebtDialog() {
         toast({
             variant: 'destructive',
             title: 'Error',
-            description: `Debtor with alias "${data.alias}" not found.`,
+            description: `No se encontró un deudor con el alias "${data.alias}".`,
         });
         break;
       case 'PAYMENT_EXCEEDS_DEBT':
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: `Payment amount exceeds the total debt for ${data.alias}.`,
+          description: `El monto del pago excede la deuda total de ${data.alias}.`,
         });
         break;
     }
@@ -83,14 +83,14 @@ export function PayDebtDialog() {
       <DialogTrigger asChild>
         <Button variant="secondary">
           <HandCoins />
-          Pay Debt
+          Registrar Pago
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Register a Payment</DialogTitle>
+          <DialogTitle className="font-headline">Registrar un Pago</DialogTitle>
           <DialogDescription>
-            Enter the debtor's alias and the amount they have paid.
+            Introduce el alias del deudor y el monto que ha pagado.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -102,7 +102,7 @@ export function PayDebtDialog() {
                 <FormItem>
                   <FormLabel>Alias</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., JohnDoe" {...field} />
+                    <Input placeholder="ej., JuanPerez" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,9 +113,9 @@ export function PayDebtDialog() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount Paid</FormLabel>
+                  <FormLabel>Monto Pagado</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 25.00" step="0.01" {...field} value={field.value ?? ''} />
+                    <Input type="number" placeholder="ej., 25.00" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -123,7 +123,7 @@ export function PayDebtDialog() {
             />
             <DialogFooter>
                <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Processing..." : "Register Payment"}
+                {form.formState.isSubmitting ? "Procesando..." : "Registrar Pago"}
               </Button>
             </DialogFooter>
           </form>

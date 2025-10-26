@@ -12,9 +12,9 @@ export function StatsCards() {
   const totalDebt = debtors.reduce((acc, debtor) => acc + debtor.totalDebt, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR',
     }).format(amount);
   };
 
@@ -22,7 +22,7 @@ export function StatsCards() {
     <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Debtors</CardTitle>
+          <CardTitle className="text-sm font-medium">Deudores Totales</CardTitle>
           <Users className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -32,13 +32,13 @@ export function StatsCards() {
             <div className="text-3xl font-bold font-headline">{totalDebtors}</div>
           )}
           <p className="text-xs text-muted-foreground">
-            Total number of active debtors
+            Número total de deudores activos
           </p>
         </CardContent>
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Owed</CardTitle>
+          <CardTitle className="text-sm font-medium">Total Adeudado</CardTitle>
           <Landmark className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -50,7 +50,7 @@ export function StatsCards() {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            Sum of all outstanding debts
+            Suma de todas las deudas pendientes
           </p>
         </CardContent>
       </Card>

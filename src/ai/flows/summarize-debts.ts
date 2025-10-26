@@ -26,13 +26,13 @@ const DebtorSchema = z.object({
 });
 
 const SummarizeDebtsInputSchema = z.object({
-  debtors: z.array(DebtorSchema).describe("The list of debtors to summarize"),
+  debtors: z.array(DebtorSchema).describe("La lista de deudores a resumir"),
 });
 export type SummarizeDebtsInput = z.infer<typeof SummarizeDebtsInputSchema>;
 
 // Define el esquema para la salida.
 const SummarizeDebtsOutputSchema = z.object({
-  summary: z.string().describe("The AI-generated summary of the debt situation."),
+  summary: z.string().describe("El resumen de la situación de la deuda generado por la IA."),
 });
 export type SummarizeDebtsOutput = z.infer<typeof SummarizeDebtsOutputSchema>;
 
@@ -45,20 +45,20 @@ const prompt = ai.definePrompt({
   name: 'summarizeDebtsPrompt',
   input: { schema: SummarizeDebtsInputSchema },
   output: { schema: SummarizeDebtsOutputSchema },
-  prompt: `You are a helpful financial assistant integrated into a debt tracking application.
-Your task is to provide a concise, insightful summary of the user's current debt situation based on a list of their debtors.
+  prompt: `Eres un útil asistente financiero integrado en una aplicación de seguimiento de deudas.
+Tu tarea es proporcionar un resumen conciso y perspicaz de la situación actual de la deuda del usuario basado en una lista de sus deudores.
 
-Analyze the provided list of debtors:
+Analiza la lista de deudores proporcionada:
 {{{json debtors}}}
 
-Based on the data, provide a summary that includes:
-1. The total number of debtors.
-2. The total amount of money owed to the user across all debtors.
-3. Identify the debtor who owes the most money and how much they owe.
-4. Provide a brief, encouraging, and professional closing statement.
+Basándote en los datos, proporciona un resumen que incluya:
+1. El número total de deudores.
+2. La cantidad total de dinero que se le debe al usuario entre todos los deudores.
+3. Identifica al deudor que debe más dinero y cuánto debe.
+4. Proporciona una breve, alentadora y profesional declaración de cierre.
 
-Present the information clearly and concisely. The response should be in Spanish.
-Example output:
+Presenta la información de forma clara y concisa. La respuesta debe estar en español.
+Ejemplo de salida:
 "Actualmente tienes 5 deudores que te deben un total de $1,250.50. El deudor con la mayor deuda es 'JuanPerez', que debe $700.00. ¡Sigue así con la gestión de tus cobros!"
 `,
 });

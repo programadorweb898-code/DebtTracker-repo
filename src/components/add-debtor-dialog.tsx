@@ -30,12 +30,12 @@ import { useToast } from '@/hooks/use-toast';
 const debtorSchema = z.object({
   alias: z.string()
     .trim()
-    .min(1, 'Alias is required')
-    .max(50, 'Alias is too long')
+    .min(1, 'El alias es requerido.')
+    .max(50, 'El alias es demasiado largo.')
     .refine((val) => !/\s/.test(val), {
-        message: 'Alias cannot contain spaces.',
+        message: 'El alias no puede contener espacios.',
     }),
-  amount: z.coerce.number().positive('Amount must be a positive number'),
+  amount: z.coerce.number().positive('El monto debe ser un número positivo.'),
 });
 
 type DebtorFormValues = z.infer<typeof debtorSchema>;
@@ -63,14 +63,14 @@ export function AddDebtorDialog() {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle />
-          Add Debt
+          Añadir Deuda
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">Add New Debt</DialogTitle>
+          <DialogTitle className="font-headline">Añadir Nueva Deuda</DialogTitle>
           <DialogDescription>
-            Enter debtor's alias and the amount of debt. If the alias exists, the debt will be added.
+            Introduce el alias del deudor y el monto de la deuda. Si el alias ya existe, la deuda se sumará.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -82,7 +82,7 @@ export function AddDebtorDialog() {
                 <FormItem>
                   <FormLabel>Alias</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., JohnDoe" {...field} />
+                    <Input placeholder="ej., JuanPerez" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -93,9 +93,9 @@ export function AddDebtorDialog() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Monto</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="e.g., 50.25" step="0.01" {...field} value={field.value ?? ''} />
+                    <Input type="number" placeholder="ej., 50.25" step="0.01" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -103,7 +103,7 @@ export function AddDebtorDialog() {
             />
             <DialogFooter>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Adding..." : "Add Debt"}
+                {form.formState.isSubmitting ? "Añadiendo..." : "Añadir Deuda"}
               </Button>
             </DialogFooter>
           </form>

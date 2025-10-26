@@ -12,7 +12,7 @@ import { useAuth, useFirestore, useUser } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 interface AuthContextType {
-  user: any; // Using `any` for simplicity, but can be typed to Firebase User
+  user: any; // Usar `any` por simplicidad, pero puede ser tipado a Firebase User
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string) => Promise<any>;
@@ -31,11 +31,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         return await signInWithEmailAndPassword(auth, email, password);
       } catch (error: any) {
-        // Firebase provides specific error codes
+        // Firebase provee códigos de error específicos
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          throw new Error('Invalid email or password.');
+          throw new Error('Email o contraseña inválidos.');
         }
-        throw new Error(error.message || 'An unknown error occurred during login.');
+        throw new Error(error.message || 'Ocurrió un error desconocido durante el inicio de sesión.');
       }
     },
     [auth]
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Create a user profile document in Firestore
+        // Crear un documento de perfil de usuario en Firestore
         const userDocRef = doc(firestore, "users", user.uid);
         const userProfile = {
           uid: user.uid,
@@ -55,15 +55,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date().toISOString(),
         };
         
-        // Use non-blocking write
+        // Usar escritura no bloqueante
         setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
         return userCredential;
       } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-          throw new Error('This email address is already in use.');
+          throw new Error('Esta dirección de correo electrónico ya está en uso.');
         }
-        throw new Error(error.message || 'An unknown error occurred during registration.');
+        throw new Error(error.message || 'Ocurrió un error desconocido durante el registro.');
       }
     },
     [auth, firestore]
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuthContext must be used within an AuthProvider');
+    throw new Error('useAuthContext debe ser usado dentro de un AuthProvider');
   }
   return context;
 };

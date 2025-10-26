@@ -26,17 +26,17 @@ export default function DebtorDetailPage() {
   }
   
   if (!debtor) {
-    // We need to wait for loading to finish before we can say notFound
+    // Tenemos que esperar a que termine la carga antes de poder decir notFound
     if (!isLoading) {
       notFound();
     }
-    return null; // Or a skeleton loader
+    return null; // O un esqueleto de carga
   }
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('es-ES', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'EUR', // Cambiado a EUR para el ejemplo en español, puedes ajustarlo
     }).format(amount);
   };
 
@@ -45,7 +45,7 @@ export default function DebtorDetailPage() {
       <div className="mb-8">
         <Button asChild variant="outline">
           <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
+            <ArrowLeft className="mr-2 h-4 w-4" /> Volver a la Lista
           </Link>
         </Button>
       </div>
@@ -53,42 +53,42 @@ export default function DebtorDetailPage() {
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="font-headline text-3xl flex items-center gap-2"><User />{debtor.alias}</CardTitle>
-          <CardDescription>Detailed debt history</CardDescription>
+          <CardDescription>Historial detallado de la deuda</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
             <Landmark className="h-6 w-6 text-muted-foreground" />
-            <p className="text-2xl font-bold">{formatCurrency(debtor.totalDebt)} <span className="text-sm font-normal text-muted-foreground">Total Debt</span></p>
+            <p className="text-2xl font-bold">{formatCurrency(debtor.totalDebt)} <span className="text-sm font-normal text-muted-foreground">Deuda Total</span></p>
           </div>
           <div className="flex items-center gap-2 mt-2">
             <Calendar className="h-6 w-6 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">{debtor.debts.length} debt entries</p>
+            <p className="text-sm text-muted-foreground">{debtor.debts.length} registros de deuda</p>
           </div>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
+            <CardTitle>Historial de Transacciones</CardTitle>
         </CardHeader>
         <CardContent>
             <Table>
                 <TableHeader>
                 <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
                 </TableRow>
                 </TableHeader>
                 <TableBody>
                 {debtor.debts.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((debt) => (
                     <TableRow key={debt.id}>
-                    <TableCell>{new Date(debt.date).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(debt.date).toLocaleDateString('es-ES')}</TableCell>
                     <TableCell>
                       {debt.amount > 0 ? (
-                        <span className="text-destructive">Debt</span>
+                        <span className="text-destructive">Deuda</span>
                       ) : (
-                        <span className="text-green-600">Payment</span>
+                        <span className="text-green-600">Pago</span>
                       )}
                     </TableCell>
                     <TableCell className={`text-right font-medium ${debt.amount > 0 ? 'text-destructive' : 'text-green-600'}`}>

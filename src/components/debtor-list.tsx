@@ -28,8 +28,8 @@ export function DebtorList({ debtors, isLoading }: DebtorListProps) {
   if (debtors.length === 0) {
     return (
       <div className="text-center py-16 border-2 border-dashed rounded-lg">
-        <h3 className="text-xl font-semibold text-muted-foreground">No debtors found</h3>
-        <p className="text-muted-foreground">Try adjusting your filters or adding a new debtor.</p>
+        <h3 className="text-xl font-semibold text-muted-foreground">No se encontraron deudores</h3>
+        <p className="text-muted-foreground">Intenta ajustar tus filtros o añade un nuevo deudor.</p>
       </div>
     );
   }

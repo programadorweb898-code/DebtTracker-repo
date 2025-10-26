@@ -49,7 +49,7 @@ export function DebtorFilters({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Filter by alias..."
+            placeholder="Filtrar por alias..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => {
@@ -61,11 +61,11 @@ export function DebtorFilters({
 
         <Select value={sortValue} onValueChange={onSort}>
           <SelectTrigger>
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue placeholder="Ordenar por..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="debt-desc">Debt: High to Low</SelectItem>
-            <SelectItem value="debt-asc">Debt: Low to High</SelectItem>
+            <SelectItem value="debt-desc">Deuda: Mayor a Menor</SelectItem>
+            <SelectItem value="debt-asc">Deuda: Menor a Mayor</SelectItem>
             <SelectItem value="alias-asc">Alias: A-Z</SelectItem>
           </SelectContent>
         </Select>
@@ -73,7 +73,7 @@ export function DebtorFilters({
         <div className="flex gap-2 items-center">
             <Input
                 type="number"
-                placeholder="Min debt"
+                placeholder="Deuda mín."
                 value={min}
                 onChange={(e) => setMin(e.target.value)}
                 onBlur={handleRangeApply}
@@ -81,7 +81,7 @@ export function DebtorFilters({
             <span>-</span>
             <Input
                 type="number"
-                placeholder="Max debt"
+                placeholder="Deuda máx."
                 value={max}
                 onChange={(e) => setMax(e.target.value)}
                 onBlur={handleRangeApply}
@@ -90,10 +90,10 @@ export function DebtorFilters({
         
         <Button onClick={handleClear} variant="ghost" className="w-full md:w-auto">
           <X className="h-4 w-4 mr-2" />
-          Clear Filters
+          Limpiar Filtros
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground mt-4">Showing {debtorCount} debtors.</p>
+      <p className="text-sm text-muted-foreground mt-4">Mostrando {debtorCount} deudores.</p>
     </div>
   );
 }
