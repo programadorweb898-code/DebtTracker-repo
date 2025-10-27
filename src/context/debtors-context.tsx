@@ -12,6 +12,7 @@ import {
   doc,
   deleteDoc,
   updateDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import type { Debtor, Debt } from '@/lib/types';
