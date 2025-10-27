@@ -26,11 +26,11 @@ export default function DebtorDetailPage() {
   }
   
   if (!debtor) {
-    // Tenemos que esperar a que termine la carga antes de poder decir notFound
+    // We have to wait for loading to finish before we can say notFound
     if (!isLoading) {
       notFound();
     }
-    return null; // O un esqueleto de carga
+    return null; // Or a loading skeleton
   }
 
   const formatCurrency = (amount: number) => {
