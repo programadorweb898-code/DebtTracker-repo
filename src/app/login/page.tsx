@@ -13,21 +13,38 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Coins } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   password: z.string().min(1, 'La contraseña es requerida.'),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuthContext();
+  const { login, sendPasswordReset } = useAuthContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
-  const form = useForm<LoginFormValues>({
+  const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -35,7 +52,14 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const onLoginSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
       await login(data.email, data.password);
@@ -55,6 +79,27 @@ export default function LoginPage() {
     }
   };
 
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
+    setIsResetLoading(true);
+    try {
+      await sendPasswordReset(data.email);
+      toast({
+        title: 'Correo enviado',
+        description: 'Se ha enviado un enlace a tu correo para restablecer tu contraseña.',
+      });
+      setIsResetDialogOpen(false);
+      forgotPasswordForm.reset();
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'No se pudo enviar el correo de restablecimiento.',
+      });
+    } finally {
+        setIsResetLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -69,10 +114,10 @@ export default function LoginPage() {
           <CardDescription>Ingresa a tu cuenta para administrar tus deudas.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <Form {...loginForm}>
+            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
               <FormField
-                control={form.control}
+                control={loginForm.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
@@ -85,11 +130,53 @@ export default function LoginPage() {
                 )}
               />
               <FormField
-                control={form.control}
+                control={loginForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
+                    <div className="flex justify-between items-center">
+                        <FormLabel>Contraseña</FormLabel>
+                        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="link" type="button" className="p-0 h-auto text-xs">
+                                ¿Olvidaste tu contraseña?
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                <DialogTitle>Restablecer Contraseña</DialogTitle>
+                                <DialogDescription>
+                                    Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+                                </DialogDescription>
+                                </DialogHeader>
+                                <Form {...forgotPasswordForm}>
+                                <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+                                    <FormField
+                                    control={forgotPasswordForm.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                            <Input type="email" placeholder="tu@email.com" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button type="button" variant="secondary">Cancelar</Button>
+                                        </DialogClose>
+                                        <Button type="submit" disabled={isResetLoading}>
+                                            {isResetLoading ? 'Enviando...' : 'Enviar enlace'}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                                </Form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                     <FormControl>
                       <Input type="password" placeholder="********" {...field} />
                     </FormControl>

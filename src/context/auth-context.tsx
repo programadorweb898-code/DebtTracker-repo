@@ -6,18 +6,20 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase'; // Eliminado useUser ya que no se usa directamente aquí
+import { useAuth, useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { useUser } from '@/firebase/provider'; // Importación correcta para useUser
+import { useUser } from '@/firebase/provider';
 
 interface AuthContextType {
-  user: any; // Usar `any` por simplicidad, pero puede ser tipado a Firebase User
+  user: any; 
   loading: boolean;
   login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -54,7 +56,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date().toISOString(),
         };
         
-        // Se utiliza la escritura no bloqueante para mayor robustez
         setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
         return userCredential;
@@ -72,8 +73,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   }, [auth]);
 
+  const sendPasswordReset = useCallback(
+    async (email: string) => {
+      try {
+        await sendPasswordResetEmail(auth, email);
+      } catch (error: any) {
+         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+          throw new Error('No se encontró ningún usuario con este correo electrónico.');
+        }
+        throw new Error(error.message || 'Ocurrió un error desconocido.');
+      }
+    },
+    [auth]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading: isUserLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading: isUserLoading, login, register, logout, sendPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
