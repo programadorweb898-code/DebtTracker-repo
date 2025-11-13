@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useCallback } from 'react';
 import {
+  Auth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -19,10 +20,21 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   register: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<void>;
+  sendPasswordReset: (auth: Auth, email: string) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const sendPasswordReset = async (auth: Auth, email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+        throw new Error('No se encontró ningún usuario con este correo electrónico.');
+      }
+      throw new Error(error.message || 'Ocurrió un error desconocido.');
+    }
+  };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const auth = useAuth();
@@ -73,19 +85,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await signOut(auth);
   }, [auth]);
 
-  const sendPasswordReset = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-    } catch (error: any) {
-       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-        throw new Error('No se encontró ningún usuario con este correo electrónico.');
-      }
-      throw new Error(error.message || 'Ocurrió un error desconocido.');
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, loading: isUserLoading, login, register, logout, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, loading: isUserLoading, login, register, logout, sendPasswordReset: (email) => sendPasswordReset(auth, email) }}>
       {children}
     </AuthContext.Provider>
   );

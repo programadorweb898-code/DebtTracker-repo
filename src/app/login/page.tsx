@@ -23,6 +23,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import { useAuth } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
@@ -39,6 +40,7 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { login, sendPasswordReset } = useAuthContext();
+  const auth = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isResetLoading, setIsResetLoading] = useState(false);
