@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthContext } from '@/context/auth-context';
+import { useAuthContext, sendPasswordReset } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -39,7 +39,7 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, sendPasswordReset } = useAuthContext();
+  const { login } = useAuthContext();
   const auth = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +84,7 @@ export default function LoginPage() {
   const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
     setIsResetLoading(true);
     try {
-      await sendPasswordReset(data.email);
+      await sendPasswordReset(auth, data.email);
       toast({
         title: 'Correo enviado',
         description: 'Se ha enviado un enlace a tu correo para restablecer tu contraseña.',
