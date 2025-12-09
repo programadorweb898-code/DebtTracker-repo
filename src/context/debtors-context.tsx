@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import {
   collection,
   query,
@@ -42,7 +42,14 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: debtors, isLoading } = useCollection<Debtor>(debtorsQuery);
 
-  const addDebt = async (alias: string, amount: number) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-MX', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const addDebt = useCallback(async (alias: string, amount: number) => {
     if (!user) return;
     const trimmedAlias = alias.trim();
     const debtorsColRef = collection(firestore, 'debtors');
@@ -92,9 +99,9 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
         description: 'No se pudo añadir la deuda. Por favor, inténtalo de nuevo.',
       });
     }
-  };
+  }, [user, firestore, toast]);
 
-  const payDebt = async (alias: string, amount: number): Promise<PayDebtResult> => {
+  const payDebt = useCallback(async (alias: string, amount: number): Promise<PayDebtResult> => {
     if (!user) return 'DEBTOR_NOT_FOUND';
     const trimmedAlias = alias.trim();
     const debtorsColRef = collection(firestore, 'debtors');
@@ -151,9 +158,9 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       // Este es un retorno genérico, podría necesitar un manejo de errores más específico
       return 'DEBTOR_NOT_FOUND';
     }
-  };
+  }, [user, firestore, toast]);
 
-  const deleteDebtor = async (debtorId: string) => {
+  const deleteDebtor = useCallback(async (debtorId: string) => {
     if (!user) return;
     try {
       const docRef = doc(firestore, 'debtors', debtorId);
@@ -170,14 +177,8 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
         description: 'No se pudo eliminar al deudor. Por favor, inténtalo de nuevo.',
       });
     }
-  };
+  }, [user, firestore, toast]);
   
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
 
   const value = useMemo(
     () => ({
@@ -187,7 +188,7 @@ export const DebtorsProvider = ({ children }: { children: ReactNode }) => {
       payDebt,
       deleteDebtor,
     }),
-    [debtors, isLoading, user]
+    [debtors, isLoading, addDebt, payDebt, deleteDebtor]
   );
 
   return <DebtorsContext.Provider value={value}>{children}</DebtorsContext.Provider>;
