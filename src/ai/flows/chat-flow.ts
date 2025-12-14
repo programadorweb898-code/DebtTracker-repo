@@ -42,9 +42,9 @@ const chatFlow = ai.defineFlow(
   },
   async ({ history, prompt, debtors }) => {
     const llmResponse = await ai.generate({
-      prompt: prompt,
-      history: history,
       model: 'googleai/gemini-2.5-flash',
+      prompt: prompt,
+      messages: history,
       system: `Eres un asistente financiero para la aplicación DebtTracker.
         DEBES usar los datos proporcionados como la única fuente de verdad para responder las preguntas de los usuarios.
 

@@ -1,0 +1,157 @@
+{
+  "name": "User Registration Confirmation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "user-registration",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-registration",
+      "name": "Webhook - User Registration",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "user-registration"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "email-exists",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "uid-exists",
+              "leftValue": "={{ $json.uid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validate-user-data",
+      "name": "Validate User Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "sendTo": "={{ $json.email }}",
+        "subject": "¡Bienvenido a DebtTracker! 🎉",
+        "emailType": "html",
+        "message": "<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: 'Inter', Arial, sans-serif; background-color: #F0F8FF; margin: 0; padding: 20px; }\n    .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n    .header { text-align: center; margin-bottom: 30px; }\n    .logo { color: #A0C4FF; font-size: 32px; font-weight: bold; margin-bottom: 10px; }\n    h1 { color: #333; font-size: 28px; margin-bottom: 20px; text-align: center; }\n    p { color: #666; line-height: 1.6; margin-bottom: 20px; }\n    .features { background-color: #F0F8FF; padding: 20px; border-radius: 8px; margin: 20px 0; }\n    .feature { margin-bottom: 12px; padding-left: 24px; position: relative; }\n    .feature:before { content: '✓'; position: absolute; left: 0; color: #A0C4FF; font-weight: bold; }\n    .button { display: inline-block; background-color: #A0C4FF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }\n    .footer { text-align: center; margin-top: 30px; color: #999; font-size: 12px; }\n    .highlight { background-color: #FFF4CC; padding: 2px 6px; border-radius: 4px; }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <div class=\"logo\">💰 DebtTracker</div>\n    </div>\n    <h1>¡Bienvenido a DebtTracker!</h1>\n    <p>Hola,</p>\n    <p>Tu cuenta ha sido creada exitosamente. Estamos emocionados de tenerte con nosotros.</p>\n    <p><strong>Detalles de tu cuenta:</strong></p>\n    <p>Email: <span class=\"highlight\">={{ $json.email }}</span></p>\n    <p>ID de Usuario: <code>={{ $json.uid }}</code></p>\n    <p>Fecha de registro: ={{ $json.createdAt }}</p>\n    \n    <div class=\"features\">\n      <p style=\"margin-top: 0; font-weight: 600; color: #333;\">Con DebtTracker puedes:</p>\n      <div class=\"feature\">Registrar y gestionar deudores fácilmente</div>\n      <div class=\"feature\">Rastrear pagos y deudas con historial completo</div>\n      <div class=\"feature\">Ver métricas en tiempo real de tus finanzas</div>\n      <div class=\"feature\">Usar nuestro asistente AI para análisis inteligente</div>\n      <div class=\"feature\">Filtrar y buscar deudores rápidamente</div>\n    </div>\n\n    <div style=\"text-align: center;\">\n      <a href=\"https://tu-app.render.com/login\" class=\"button\">Comenzar Ahora</a>\n    </div>\n\n    <p style=\"margin-top: 30px;\"><strong>¿Necesitas ayuda?</strong></p>\n    <p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>\n\n    <div class=\"footer\">\n      <p>© 2024 DebtTracker - Gestión de Deudas</p>\n      <p>Este es un correo automático, por favor no respondas a este mensaje.</p>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "send-welcome-email",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [650, 200],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIALS_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Email de bienvenida enviado exitosamente\", \"email\": $json.email } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"error\": \"Datos de usuario incompletos\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 400]
+    }
+  ],
+  "connections": {
+    "Webhook - User Registration": {
+      "main": [
+        [
+          {
+            "node": "Validate User Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate User Data": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-12-13T19:30:00.000Z",
+  "versionId": "1"
+}

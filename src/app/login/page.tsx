@@ -26,12 +26,20 @@ import {
 import { useAuth } from '@/firebase';
 
 const loginSchema = z.object({
-  email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  password: z.string().min(1, 'La contraseña es requerida.'),
+  email: z.string()
+    .min(1, 'El campo email es requerido.')
+    .refine((val) => val.includes('@') && val.includes('.'), {
+      message: 'Por favor, introduce una dirección de correo electrónico válida.',
+    }),
+  password: z.string().min(1, 'El campo contraseña es requerido.'),
 });
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
+  email: z.string()
+    .min(1, 'El campo email es requerido.')
+    .refine((val) => val.includes('@') && val.includes('.'), {
+      message: 'Por favor, introduce una dirección de correo electrónico válida.',
+    }),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -87,11 +95,12 @@ export default function LoginPage() {
       await sendPasswordReset(auth, data.email);
       toast({
         title: 'Correo enviado',
-        description: 'Se ha enviado un enlace a tu correo para restablecer tu contraseña.',
+        description: 'Se ha enviado un enlace de recuperación a tu correo electrónico.',
       });
       setIsResetDialogOpen(false);
       forgotPasswordForm.reset();
     } catch (error: any) {
+       // Solo mostramos error, NO cerramos el diálogo para que el usuario vea el mensaje
        toast({
         variant: 'destructive',
         title: 'Error',
@@ -99,6 +108,16 @@ export default function LoginPage() {
       });
     } finally {
         setIsResetLoading(false);
+    }
+  };
+
+  // Manejador para cuando se cierra el diálogo sin enviar
+  const handleDialogClose = (open: boolean) => {
+    setIsResetDialogOpen(open);
+    if (!open) {
+      // Limpiamos el formulario y los errores cuando se cierra el diálogo
+      forgotPasswordForm.reset();
+      forgotPasswordForm.clearErrors();
     }
   };
 
@@ -138,7 +157,7 @@ export default function LoginPage() {
                   <FormItem>
                     <div className="flex justify-between items-center">
                         <FormLabel>Contraseña</FormLabel>
-                        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                        <Dialog open={isResetDialogOpen} onOpenChange={handleDialogClose}>
                             <DialogTrigger asChild>
                                 <Button variant="link" type="button" className="p-0 h-auto text-xs">
                                 ¿Olvidaste tu contraseña?
