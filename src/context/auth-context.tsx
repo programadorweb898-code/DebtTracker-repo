@@ -34,11 +34,15 @@ const N8N_PASSWORD_RESET_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhoo
 const N8N_REGISTRATION_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhook/user-registration';
 
 export const sendPasswordReset = async (auth: Auth, email: string) => {
+    console.log("Attempting password reset for:", email); // Log 1
     try {
       // Primero verificamos si el email existe en Firebase Auth
       const signInMethods = await fetchSignInMethodsForEmail(auth, email);
       
+      console.log("Sign-in methods found:", signInMethods); // Log 2
+
       if (signInMethods.length === 0) {
+        console.log("No sign-in methods found. Throwing error."); // Log 3
         throw new Error('No se encontró ninguna cuenta registrada con este correo electrónico.');
       }
       
