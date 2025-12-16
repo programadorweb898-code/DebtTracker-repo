@@ -34,48 +34,59 @@ const N8N_PASSWORD_RESET_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhoo
 const N8N_REGISTRATION_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhook/user-registration';
 
 export const sendPasswordReset = async (auth: Auth, email: string) => {
-    console.log("Attempting password reset for:", email); // Log 1
     try {
-      // Primero verificamos si el email existe en Firebase Auth
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
+      // Limpiar el email de espacios en blanco
+      const cleanEmail = email.trim().toLowerCase();
       
-      console.log("Sign-in methods found:", signInMethods); // Log 2
+      console.log("🔍 Validando email:", cleanEmail);
 
-      if (signInMethods.length === 0) {
-        console.log("No sign-in methods found. Throwing error."); // Log 3
-        throw new Error('No se encontró ninguna cuenta registrada con este correo electrónico.');
-      }
+      // Intentar enviar el email directamente
+      // Firebase Auth NO expone si el usuario existe por razones de seguridad
+      // Pero sí enviará el email si el usuario existe
+      await sendPasswordResetEmail(auth, cleanEmail);
       
-      // Llamar al webhook de n8n para validar y enviar email
-      const response = await fetch(N8N_PASSWORD_RESET_WEBHOOK, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          timestamp: new Date().toISOString(),
-        }),
-      });
+      console.log("✅ Email de Firebase enviado");
 
-      if (!response.ok) {
-        throw new Error('Error al procesar la solicitud de recuperación.');
+      // Llamar al webhook de n8n para enviar email de confirmación
+      try {
+        const response = await fetch(N8N_PASSWORD_RESET_WEBHOOK, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: cleanEmail,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+
+        if (response.ok) {
+          console.log("✅ Email de confirmación (n8n) enviado");
+        } else {
+          console.warn("⚠️ n8n webhook falló, pero el reset de Firebase se envió");
+        }
+      } catch (n8nError) {
+        // No bloqueamos si n8n falla
+        console.error('⚠️ Error en n8n (no crítico):', n8nError);
       }
-
-      // Si n8n responde correctamente, enviamos el email de Firebase
-      await sendPasswordResetEmail(auth, email);
       
     } catch (error: any) {
-      // Si ya lanzamos un error personalizado, lo propagamos
-      if (error.message.includes('No se encontró ninguna cuenta')) {
-        throw error;
-      }
+      console.error("❌ Error en sendPasswordReset:", error);
       
-      // Manejo de otros errores de Firebase
+      // Errores comunes de Firebase
       if (error.code === 'auth/invalid-email') {
         throw new Error('El formato del correo electrónico no es válido.');
       }
       
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('No se encontró ninguna cuenta registrada con este correo electrónico.');
+      }
+      
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Demasiados intentos. Por favor, espera unos minutos e intenta de nuevo.');
+      }
+
+      // Otros errores
       throw new Error(error.message || 'Ocurrió un error al enviar el correo de recuperación.');
     }
   };
@@ -88,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(
     async (email: string, password: string) => {
       try {
-        return await signInWithEmailAndPassword(auth, email, password);
+        return await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           throw new Error('Email o contraseña inválidos.');
@@ -102,7 +113,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = useCallback(
     async (email: string, password: string) => {
       try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const cleanEmail = email.trim().toLowerCase();
+        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const user = userCredential.user;
         
         const userDocRef = doc(firestore, "users", user.uid);
