@@ -40,12 +40,10 @@ export const sendPasswordReset = async (auth: Auth, email: string) => {
       
       console.log("🔍 Validando email:", cleanEmail);
 
-      // Intentar enviar el email directamente
-      // Firebase Auth NO expone si el usuario existe por razones de seguridad
-      // Pero sí enviará el email si el usuario existe
+      // Usando la configuración por defecto de Firebase para el enlace de reseteo
       await sendPasswordResetEmail(auth, cleanEmail);
       
-      console.log("✅ Email de Firebase enviado");
+      console.log("✅ Email de Firebase enviado (enlace por defecto).");
 
       // Llamar al webhook de n8n para enviar email de confirmación
       try {
@@ -71,23 +69,28 @@ export const sendPasswordReset = async (auth: Auth, email: string) => {
       }
       
     } catch (error: any) {
-      console.error("❌ Error en sendPasswordReset:", error);
+      console.error("❌ Error completo en sendPasswordReset:", error);
       
-      // Errores comunes de Firebase
-      if (error.code === 'auth/invalid-email') {
-        throw new Error('El formato del correo electrónico no es válido.');
-      }
-      
-      if (error.code === 'auth/user-not-found') {
-        throw new Error('No se encontró ninguna cuenta registrada con este correo electrónico.');
-      }
-      
-      if (error.code === 'auth/too-many-requests') {
-        throw new Error('Demasiados intentos. Por favor, espera unos minutos e intenta de nuevo.');
+      let errorMessage = 'Ocurrió un error desconocido.';
+      if (typeof error === 'object' && error !== null) {
+        // Los errores de Firebase suelen tener code y message
+        if ('code' in error && 'message' in error) {
+            errorMessage = `Código: ${error.code}. Mensaje: ${error.message}`;
+        } else if ('message' in error) {
+          errorMessage = String(error.message);
+        } else {
+          try {
+            // Como último recurso, intentar convertir el error a string
+            errorMessage = JSON.stringify(error);
+          } catch {
+            errorMessage = 'No se pudo procesar el objeto de error.';
+          }
+        }
+      } else if (error) {
+        errorMessage = String(error);
       }
 
-      // Otros errores
-      throw new Error(error.message || 'Ocurrió un error al enviar el correo de recuperación.');
+      throw new Error(errorMessage);
     }
   };
 
