@@ -19,8 +19,11 @@ const registerSchema = z
     email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
     password: z
       .string()
-      .min(6, 'La contraseña debe tener al menos 6 caracteres.')
-      .max(20, 'La contraseña no puede tener más de 20 caracteres.'),
+      .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+      .max(20, 'La contraseña no puede tener más de 20 caracteres.')
+      .regex(/(?=.*[A-Z])/, 'La contraseña debe contener al menos una mayúscula.')
+      .regex(/(?=.*[0-9])/, 'La contraseña debe contener al menos un número.')
+      .regex(/(?=.*[!@#$%^&*])/, 'La contraseña debe contener al menos un caracter especial (!@#$%^&*).'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
