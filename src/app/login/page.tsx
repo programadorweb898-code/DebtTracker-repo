@@ -125,7 +125,7 @@ export default function LoginPage() {
       await sendPasswordReset(auth, data.email);
       toast({
         title: 'Correo enviado',
-        description: 'Se ha enviado un enlace de recuperación a tu correo electrónico.',
+        description: 'Si tu correo está registrado en nuestro sistema, recibirás un enlace para restablecer tu contraseña en unos minutos. No olvides revisar tu carpeta de spam.',
       });
       setIsResetDialogOpen(false);
       forgotPasswordForm.reset();
