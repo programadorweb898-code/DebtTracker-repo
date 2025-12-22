@@ -26,12 +26,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// URLs de webhooks de n8n en Render
-// Workflow ID: CxPrukFB2jbwjSlV
-const N8N_PASSWORD_RESET_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhook/password-reset';
-
-// Workflow ID: 6N9ae63qlJmKgxz7
-const N8N_REGISTRATION_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhook/user-registration';
+// Las URLs de n8n ahora se manejan desde API routes para evitar problemas de CORS
 
 export const sendPasswordReset = async (auth: Auth, email: string) => {
     try {
@@ -45,21 +40,20 @@ export const sendPasswordReset = async (auth: Auth, email: string) => {
       
       console.log("✅ Email de Firebase enviado (enlace por defecto).");
 
-      // Llamar al webhook de n8n para enviar email de confirmación
+      // Llamar a nuestra API route para enviar email de confirmación (desde el servidor)
       try {
-        const response = await fetch(N8N_PASSWORD_RESET_WEBHOOK, {
+        const response = await fetch('/api/password-reset', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             email: cleanEmail,
-            timestamp: new Date().toISOString(),
           }),
         });
 
         if (response.ok) {
-          console.log("✅ Email de confirmación (n8n) enviado");
+          console.log("✅ Email de confirmación (n8n) enviado desde el servidor");
         } else {
           console.warn("⚠️ n8n webhook falló, pero el reset de Firebase se envió");
         }
@@ -129,9 +123,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
-        // Enviar notificación a n8n sobre el nuevo registro (no bloqueante)
+        // Enviar notificación a n8n sobre el nuevo registro a través de nuestra API route
         try {
-          await fetch(N8N_REGISTRATION_WEBHOOK, {
+          await fetch('/api/user-registration', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -142,9 +136,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               createdAt: userProfile.createdAt,
             }),
           });
+          console.log("✅ Notificación de registro enviada desde el servidor");
         } catch (n8nError) {
           // No bloqueamos el registro si n8n falla, solo logueamos
-          console.error('Error al notificar a n8n:', n8nError);
+          console.error('⚠️ Error al notificar a n8n (no crítico):', n8nError);
         }
 
         return userCredential;

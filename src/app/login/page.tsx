@@ -123,12 +123,19 @@ export default function LoginPage() {
     setIsResetLoading(true);
     try {
       await sendPasswordReset(auth, data.email);
+      
+      // Mostrar toast de éxito
       toast({
         title: 'Correo enviado',
         description: 'Si tu correo está registrado en nuestro sistema, recibirás un enlace para restablecer tu contraseña en unos minutos. No olvides revisar tu carpeta de spam.',
       });
-      setIsResetDialogOpen(false);
-      forgotPasswordForm.reset();
+      
+      // Pequeño delay antes de cerrar el diálogo para que el toast se renderice correctamente
+      setTimeout(() => {
+        setIsResetDialogOpen(false);
+        forgotPasswordForm.reset();
+      }, 100);
+      
     } catch (error: any) {
        // Solo mostramos error, NO cerramos el diálogo para que el usuario vea el mensaje
        toast({
