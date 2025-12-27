@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// URL del webhook de n8n para registro de usuario
-const N8N_REGISTRATION_WEBHOOK = 'https://render-repo-36pu.onrender.com/webhook/user-registration';
+// URL del webhook de n8n para registro de usuario desde variable de entorno
+const N8N_REGISTRATION_WEBHOOK = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://render-repo-36pu.onrender.com/webhook/32e8ee1f-bcff-4c8d-8c64-1dca826b1d5c';
 
 // Timeout de 10 segundos
 const WEBHOOK_TIMEOUT = 10000;
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            destinatario: email, // Email del usuario que se registró
             uid,
-            email,
             createdAt: createdAt || new Date().toISOString(),
           }),
         },

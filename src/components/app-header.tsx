@@ -2,12 +2,15 @@
 
 import { Button } from './ui/button';
 import { useAuthContext } from '@/context/auth-context';
-import { Coins, LogOut } from 'lucide-react';
+import { Coins, LogOut, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useIsAdmin } from '@/hooks/use-admin';
+import Link from 'next/link';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -25,6 +28,7 @@ import {
 export function AppHeader() {
   const { logout } = useAuthContext();
   const router = useRouter();
+  const isAdmin = useIsAdmin();
 
   const handleLogout = async () => {
     await logout();
@@ -61,6 +65,17 @@ export function AppHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="flex items-center gap-2 cursor-pointer">
+                        <Shield className="h-4 w-4" />
+                        Panel Admin
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <AlertDialogTrigger asChild>
                   <DropdownMenuItem>
                     Cerrar Sesión
