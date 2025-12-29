@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useIsAdmin } from '@/hooks/use-admin';
-import { useUser } from '@/firebase/provider';
+import { useUser, useFirestore } from '@/firebase/provider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const isAdmin = useIsAdmin();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   
   const [users, setUsers] = useState([]);
@@ -43,25 +44,58 @@ export default function AdminDashboard() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log('Fetching users from API...');
-      const response = await fetch('/api/admin/users');
+      console.log('Fetching users from Firestore (client-side)...');
       
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API error:', errorData);
-        throw new Error(errorData.message || 'Failed to fetch users');
+      if (!user) {
+        throw new Error('Usuario no autenticado');
       }
+
+      // Importar funciones de Firestore
+      const { collection, getDocs } = await import('firebase/firestore');
       
-      const data = await response.json();
-      console.log('Users data:', data);
+      // Obtener todos los usuarios
+      const usersRef = collection(firestore, 'users');
+      const usersSnapshot = await getDocs(usersRef);
       
-      if (data.success) {
-        setUsers(data.users);
-      } else {
-        throw new Error(data.message || 'Failed to fetch users');
-      }
+      console.log('Users found:', usersSnapshot.size);
+      
+      const usersData = usersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      
+      // Obtener todos los deudores
+      const debtorsRef = collection(firestore, 'debtors');
+      const debtorsSnapshot = await getDocs(debtorsRef);
+      
+      console.log('Debtors found:', debtorsSnapshot.size);
+      
+      // Procesar usuarios con sus deudores
+      const usersWithDebtors = usersData.map((userData: any) => {
+        const userDebtors = debtorsSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter((debtor: any) => debtor.ownerUid === userData.uid);
+        
+        const totalDebt = userDebtors.reduce((sum: number, debtor: any) => sum + (debtor.totalDebt || 0), 0);
+        
+        return {
+          ...userData,
+          debtors: userDebtors,
+          totalDebtAmount: totalDebt,
+          debtorsCount: userDebtors.length,
+        };
+      });
+      
+      // Ordenar por fecha de creación (más reciente primero)
+      usersWithDebtors.sort((a: any, b: any) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+      
+      console.log('Processed users:', usersWithDebtors.length);
+      setUsers(usersWithDebtors);
+      
     } catch (error) {
       console.error('Error in fetchUsers:', error);
       const errorMessage = error instanceof Error ? error.message : 'No se pudieron cargar los usuarios.';

@@ -52,17 +52,35 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       await register(data.email, data.password);
+      
       toast({
         title: '¡Registro exitoso!',
-        description: 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.',
+        description: 'Tu cuenta ha sido creada. Serás redirigido para iniciar sesión.',
       });
+      
+      // Redirigir a la página de login
       router.push('/login');
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error en el registro',
-        description: error.message || 'Hubo un problema al registrar tu cuenta. Por favor, inténtalo de nuevo.',
-      });
+      console.error('Error en registro:', error);
+      
+      // Si el error menciona /sync-users, redirigir allí
+      if (error.message?.includes('/sync-users')) {
+        toast({
+          title: 'Configuración pendiente',
+          description: error.message,
+          duration: 5000,
+        });
+        // Esperar a que el usuario lea el mensaje
+        setTimeout(() => {
+          router.push('/sync-users');
+        }, 2000);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error en el registro',
+          description: error.message || 'Hubo un problema al registrar tu cuenta. Por favor, inténtalo de nuevo.',
+        });
+      }
     } finally {
       setIsLoading(false);
     }

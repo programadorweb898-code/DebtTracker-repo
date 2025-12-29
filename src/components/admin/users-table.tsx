@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { collection, getDocs, query, where, deleteDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase/provider';
+import { ManualDeleteInstructions } from './manual-delete-instructions';
 import {
   Table,
   TableBody,
@@ -39,7 +42,11 @@ export function UsersTable({ users, onRefresh }: { users: User[]; onRefresh: () 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showManualInstructions, setShowManualInstructions] = useState(false);
+  const [manualDeleteUser, setManualDeleteUser] = useState<{ email: string; uid: string } | null>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-MX', {
@@ -59,29 +66,81 @@ export function UsersTable({ users, onRefresh }: { users: User[]; onRefresh: () 
   const handleDelete = async () => {
     if (!userToDelete) return;
 
+    setIsDeleting(true);
     try {
-      const response = await fetch('/api/admin/users', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userToDelete.uid }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: 'Usuario eliminado',
-          description: 'El usuario ha sido eliminado exitosamente.',
-        });
-        onRefresh();
-      } else {
-        throw new Error('Error al eliminar usuario');
+      console.log('Deleting user:', userToDelete.uid);
+      
+      // Buscar el documento del usuario por UID
+      const usersRef = collection(firestore, 'users');
+      const q = query(usersRef, where('uid', '==', userToDelete.uid));
+      const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        throw new Error('Usuario no encontrado');
       }
+      
+      // Eliminar el documento del usuario
+      const userDoc = querySnapshot.docs[0];
+      await deleteDoc(userDoc.ref);
+      
+      // Eliminar todos los deudores del usuario
+      const debtorsRef = collection(firestore, 'debtors');
+      const debtorsQuery = query(debtorsRef, where('ownerUid', '==', userToDelete.uid));
+      const debtorsSnapshot = await getDocs(debtorsQuery);
+      
+      const deletePromises = debtorsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      
+      console.log('✅ User document deleted from Firestore');
+      console.log('✅ Deleted', debtorsSnapshot.size, 'deudores');
+      
+      // Intentar eliminar de Firebase Authentication a través de API
+      try {
+        const response = await fetch('/api/admin/delete-auth-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: userToDelete.email,
+            uid: userToDelete.uid 
+          }),
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log('✅ User deleted from Authentication');
+          toast({
+            title: 'Usuario eliminado completamente',
+            description: `El usuario, ${debtorsSnapshot.size} deudores y su cuenta de autenticación han sido eliminados.`,
+          });
+        } else {
+          console.warn('⚠️ Could not delete from Authentication:', data.message);
+          
+          // Mostrar modal con instrucciones
+          setManualDeleteUser({
+            email: userToDelete.email,
+            uid: userToDelete.uid
+          });
+          setShowManualInstructions(true);
+        }
+      } catch (authError) {
+        console.warn('⚠️ Could not delete from Authentication:', authError);
+        toast({
+          title: 'Usuario eliminado de Firestore',
+          description: `Los datos fueron eliminados, pero debes eliminar la cuenta de Authentication manualmente en Firebase Console.`,
+        });
+      }
+      
+      onRefresh();
     } catch (error) {
+      console.error('Error deleting user:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'No se pudo eliminar el usuario.',
+        description: error instanceof Error ? error.message : 'No se pudo eliminar el usuario.',
       });
     } finally {
+      setIsDeleting(false);
       setDeleteDialogOpen(false);
       setUserToDelete(null);
     }
@@ -274,15 +333,28 @@ export function UsersTable({ users, onRefresh }: { users: User[]; onRefresh: () 
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Eliminar Usuario
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Eliminando...' : 'Eliminar Usuario'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Modal de instrucciones manuales */}
+      {manualDeleteUser && (
+        <ManualDeleteInstructions
+          open={showManualInstructions}
+          onClose={() => {
+            setShowManualInstructions(false);
+            setManualDeleteUser(null);
+          }}
+          email={manualDeleteUser.email}
+          uid={manualDeleteUser.uid}
+        />
+      )}
     </>
   );
 }

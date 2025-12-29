@@ -96,34 +96,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(
     async (email: string, password: string) => {
       try {
-        return await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+        // Primero autenticarse con Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+        const user = userCredential.user;
+        
+        console.log('✅ Autenticado en Firebase Auth:', user.uid);
+        
+        // Verificar que el usuario exista en Firestore con un 'get' directo
+        const { doc, getDoc } = await import('firebase/firestore');
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          // El usuario no existe en Firestore, cerrar sesión y mostrar error genérico
+          console.error('❌ Usuario no encontrado en Firestore');
+          await signOut(auth);
+          throw new Error('Credenciales incorrectas.');
+        }
+        
+        console.log('✅ Usuario encontrado en Firestore');
+        return userCredential;
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          throw new Error('Email o contraseña inválidos.');
+          throw new Error('Credenciales incorrectas.');
         }
+        // Si el error ya tiene un mensaje personalizado, mantenerlo
         throw new Error(error.message || 'Ocurrió un error desconocido durante el inicio de sesión.');
       }
     },
-    [auth]
+    [auth, firestore]
   );
 
   const register = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password:string) => {
+      let userCredential;
       try {
         const cleanEmail = email.trim().toLowerCase();
-        const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         const user = userCredential.user;
+        
+        console.log('✅ Usuario creado en Authentication:', user.uid);
         
         const userDocRef = doc(firestore, "users", user.uid);
         const userProfile = {
           uid: user.uid,
           email: user.email,
           createdAt: new Date().toISOString(),
+          role: 'user', // Rol por defecto
         };
         
-        setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+        // Función para intentar crear el documento con reintento
+        const createUserDocumentWithRetry = async (retries = 1, delay = 500) => {
+          try {
+            const { setDoc } = await import('firebase/firestore');
+            await setDoc(userDocRef, userProfile, { merge: true });
+            console.log('✅ Documento de usuario creado en Firestore');
+          } catch (error: any) {
+            // Si es un error de permisos y aún tenemos reintentos, lo intentamos de nuevo
+            if ((error.code === 'permission-denied' || error.message?.includes('permission-denied')) && retries > 0) {
+              console.warn(`⚠️ Firestore permission error, retrying in ${delay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
+              await createUserDocumentWithRetry(retries - 1, delay); // Llamada recursiva
+            } else {
+              // Si no es un error de permisos o no quedan reintentos, lanzamos el error
+              throw error;
+            }
+          }
+        };
 
-        // Enviar notificación a n8n sobre el nuevo registro a través de nuestra API route
+        await createUserDocumentWithRetry();
+
+        // Enviar notificación a n8n (no crítico, puede fallar)
         try {
           await fetch('/api/user-registration', {
             method: 'POST',
@@ -136,17 +179,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               createdAt: userProfile.createdAt,
             }),
           });
-          console.log("✅ Notificación de registro enviada desde el servidor");
+          console.log("✅ Notificación de registro enviada");
         } catch (n8nError) {
-          // No bloqueamos el registro si n8n falla, solo logueamos
           console.error('⚠️ Error al notificar a n8n (no crítico):', n8nError);
         }
 
+        // Desloguear al usuario para que no inicie sesión automáticamente
+        await signOut(auth);
+
         return userCredential;
       } catch (error: any) {
+        // Si llegó aquí y se creó el usuario en Auth pero falló Firestore,
+        // mostrar mensaje específico
+        if (userCredential) {
+          console.error('❌ Usuario creado en Auth pero falló Firestore');
+          throw new Error('Tu cuenta fue creada pero hubo un problema al configurar tu perfil. Por favor, ve a /sync-users para completar el proceso.');
+        }
+        
         if (error.code === 'auth/email-already-in-use') {
           throw new Error('Esta dirección de correo electrónico ya está en uso.');
         }
+        
+        if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+          throw new Error('Error de permisos al crear tu perfil. Por favor contacta al administrador.');
+        }
+        
         throw new Error(error.message || 'Ocurrió un error desconocido durante el registro.');
       }
     },
