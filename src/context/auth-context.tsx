@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useCallback } from 'react';
+import {useRouter} from "next/navigation"
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -92,11 +93,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const auth = useAuth();
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
-
+  const router=useRouter();
   const login = useCallback(
     async (email: string, password: string) => {
       try {
         // Primero autenticarse con Firebase Auth
+        //const router=useRouter();
         const userCredential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
         const user = userCredential.user;
         
@@ -115,6 +117,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         console.log('✅ Usuario encontrado en Firestore');
+        if(user.email === "gomito724@gmail.com"){
+          router.push("/admin");
+        
+        }
         return userCredential;
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -124,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error(error.message || 'Ocurrió un error desconocido durante el inicio de sesión.');
       }
     },
-    [auth, firestore]
+    [auth, firestore,router]
   );
 
   const register = useCallback(

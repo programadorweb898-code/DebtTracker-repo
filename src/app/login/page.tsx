@@ -107,6 +107,10 @@ export default function LoginPage() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
+      if(data.email === "gomito724@gmail.com"){
+        router.push("/admin")
+        return
+      }
       router.push('/');
     } catch (error: any) {
       toast({
