@@ -13,7 +13,7 @@ export default function SetupAdminPage() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_PANEL_EMAIL;
 
   const handleSetupAdmin = async () => {
     if (!user) {
@@ -24,7 +24,7 @@ export default function SetupAdminPage() {
 
     if (user.email?.toLowerCase() !== adminEmail?.toLowerCase()) {
       setStatus('error');
-      setMessage('Solo el administrador designado puede hacer esto');
+      setMessage(`Solo el administrador designado (${adminEmail}) puede hacer esto`);
       return;
     }
 

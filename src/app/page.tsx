@@ -7,11 +7,13 @@ import { DebtorsDashboard } from '@/components/debtors-dashboard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { useIsAdmin } from '@/hooks/use-admin';
 
 export default function Home() {
   const { user, loading } = useAuthContext();
   const router = useRouter();
   const [showSyncPrompt, setShowSyncPrompt] = useState(false);
+  const isAdmin = useIsAdmin();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -19,18 +21,25 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  // Mostrar prompt de sincronización después de 3 segundos si hay un error persistente
+  // Si es admin, redirigir al panel de admin
   useEffect(() => {
-    if (user && !loading) {
-      const timer = setTimeout(() => {
-        setShowSyncPrompt(true);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+    if (!loading && user && isAdmin) {
+      router.push('/admin');
     }
-  }, [user, loading]);
+  }, [isAdmin, user, loading, router]);
 
-  if (loading || !user) {
+  // Mostrar prompt de sincronización deshabilitado
+  // useEffect(() => {
+  //   if (user && !loading) {
+  //     const timer = setTimeout(() => {
+  //       setShowSyncPrompt(true);
+  //     }, 3000);
+  //     
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [user, loading]);
+
+  if (loading || !user || isAdmin) {
     return (
         <div className="flex items-center justify-center min-h-screen bg-background">
             <div className="text-foreground">Cargando...</div>

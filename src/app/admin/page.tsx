@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { AdminStatsCards } from '@/components/admin/admin-stats-cards';
 import { UsersTable } from '@/components/admin/users-table';
 import { ErrorState } from '@/components/admin/error-state';
-import { Shield, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Shield, RefreshCw, ArrowLeft, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { useAuthContext } from '@/context/auth-context';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { logout } = useAuthContext();
   
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,12 +136,6 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver a la App
-                </Button>
-              </Link>
               <div>
                 <div className="flex items-center gap-2">
                   <Shield className="h-6 w-6 text-primary" />
@@ -150,10 +146,23 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
-            <Button onClick={fetchUsers} variant="outline" size="sm">
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Actualizar
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={fetchUsers} variant="outline" size="sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Actualizar
+              </Button>
+              <Button 
+                onClick={async () => {
+                  await logout();
+                  router.push('/login');
+                }} 
+                variant="ghost" 
+                size="sm"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -193,9 +202,6 @@ export default function AdminDashboard() {
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm" onClick={fetchUsers}>
                         Actualizar Datos
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link href="/">Ver Aplicación</Link>
                       </Button>
                     </div>
                   </div>

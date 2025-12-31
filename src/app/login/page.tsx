@@ -107,7 +107,8 @@ export default function LoginPage() {
         title: '¡Bienvenido!',
         description: 'Has iniciado sesión correctamente.',
       });
-      if(data.email === "gomito724@gmail.com"){
+      // Solo redirigir a admin si la contraseña es exactamente "admin"
+      if(data.password === "admin"){
         router.push("/admin")
         return
       }

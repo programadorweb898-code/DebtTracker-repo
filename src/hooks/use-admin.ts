@@ -6,8 +6,9 @@ export function useIsAdmin() {
   
   const isAdmin = useMemo(() => {
     if (!user?.email) return false;
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-    return user.email.toLowerCase() === adminEmail?.toLowerCase();
+    // Solo verificar contra el email del panel de admin
+    const adminPanelEmail = process.env.NEXT_PUBLIC_ADMIN_PANEL_EMAIL;
+    return user.email.toLowerCase() === adminPanelEmail?.toLowerCase();
   }, [user]);
 
   return isAdmin;

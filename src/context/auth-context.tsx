@@ -117,10 +117,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         
         console.log('✅ Usuario encontrado en Firestore');
-        if(user.email === "gomito724@gmail.com"){
-          router.push("/admin");
-        
-        }
         return userCredential;
       } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
