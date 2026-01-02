@@ -132,7 +132,7 @@ export default function LoginPage() {
       // Mostrar toast de éxito
       toast({
         title: 'Correo enviado',
-        description: 'Si tu correo está registrado en nuestro sistema, recibirás un enlace para restablecer tu contraseña en unos minutos. No olvides revisar tu carpeta de spam.',
+        description: 'Recibirás un enlace para restablecer tu contraseña en unos minutos. No olvides revisar tu carpeta de spam.',
       });
       
       // Pequeño delay antes de cerrar el diálogo para que el toast se renderice correctamente

@@ -11,7 +11,7 @@ import {
   sendPasswordResetEmail,
   fetchSignInMethodsForEmail,
 } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs } from 'firebase/firestore';
 import { useAuth, useFirestore } from '@/firebase';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useUser } from '@/firebase/provider';
@@ -35,6 +35,35 @@ export const sendPasswordReset = async (auth: Auth, email: string) => {
       const cleanEmail = email.trim().toLowerCase();
       
       console.log("🔍 Validando email:", cleanEmail);
+
+      // Verificar si el email existe en Firestore usando API route
+      try {
+        const verifyResponse = await fetch('/api/verify-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: cleanEmail }),
+        });
+
+        if (!verifyResponse.ok) {
+          const errorData = await verifyResponse.json();
+          if (verifyResponse.status === 404) {
+            // Email no encontrado
+            throw new Error(errorData.message || 'Este correo electrónico no está registrado en el sistema.');
+          }
+          throw new Error(errorData.error || 'Error al verificar el email');
+        }
+        
+        console.log("✅ Email encontrado en Firestore");
+      } catch (verifyError: any) {
+        // Si es un error de red o el servidor no responde, permitir continuar
+        if (verifyError.message.includes('registrado')) {
+          // Es el error que queremos mostrar
+          throw verifyError;
+        }
+        console.warn('⚠️ No se pudo verificar el email, continuando de todas formas:', verifyError);
+      }
 
       // Usando la configuración por defecto de Firebase para el enlace de reseteo
       await sendPasswordResetEmail(auth, cleanEmail);
@@ -70,7 +99,12 @@ export const sendPasswordReset = async (auth: Auth, email: string) => {
       if (typeof error === 'object' && error !== null) {
         // Los errores de Firebase suelen tener code y message
         if ('code' in error && 'message' in error) {
-            errorMessage = `Código: ${error.code}. Mensaje: ${error.message}`;
+            // Manejar errores específicos de Firebase
+            if (error.code === 'auth/user-not-found') {
+              errorMessage = 'Este correo electrónico no está registrado en el sistema.';
+            } else {
+              errorMessage = `Código: ${error.code}. Mensaje: ${error.message}`;
+            }
         } else if ('message' in error) {
           errorMessage = String(error.message);
         } else {

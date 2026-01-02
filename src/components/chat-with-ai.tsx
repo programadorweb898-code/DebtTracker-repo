@@ -31,16 +31,33 @@ export function ChatWithAI() {
     setIsLoading(true);
 
     try {
+      console.log('Messages before mapping:', messages);
+      
+      // Crear historial en formato correcto para Gemini
+      const formattedHistory = messages
+        .filter(m => m && m.role && m.content && m.content.trim()) // Filtrar mensajes inválidos
+        .map(m => {
+          // Gemini espera 'user' o 'model' como roles, no 'assistant'
+          const role = m.role === 'assistant' ? 'model' : 'user';
+          return {
+            role: role,
+            parts: [{ text: m.content }]
+          };
+        });
+
+      console.log('Formatted history being sent:', formattedHistory);
+      
       const chatInput: ChatInput = {
-        history: messages.map(m => ({
-          role: m.role,
-          parts: [{ text: m.content }]
-        })),
+        history: formattedHistory,
         prompt: input,
         debtors: debtors,
       };
 
+      console.log('Chat input being sent:', chatInput);
+
       const result = await chat(chatInput);
+      
+      console.log('Chat result:', result);
       
       const assistantMessage: Message = {
         role: 'assistant',
@@ -49,7 +66,8 @@ export function ChatWithAI() {
       setMessages((prev) => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Error con el flujo de chat:', error);
+      console.error('Error completo con el flujo de chat:', error);
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       const errorMessage: Message = {
         role: 'assistant',
         content: "Lo siento, estoy teniendo problemas para conectarme a mi cerebro en este momento. Por favor, inténtalo de nuevo más tarde.",
