@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Coins } from 'lucide-react';
-import { auth } from '@/firebase/config';
+import { useAuth } from '@/firebase';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 
 const resetPasswordSchema = z
@@ -37,6 +37,7 @@ function ResetPasswordPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
+    const auth = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [isVerifying, setIsVerifying] = useState(true);
     const [error, setError] = useState<string | null>(null);

@@ -23,7 +23,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const { logout } = useAuthContext();
   
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
