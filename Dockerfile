@@ -49,4 +49,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Comando de arranque: standalone server
-CMD ["node", ".next/standalone/server.js"]
+CMD ["node", ".next/standalone/debTracker/DebTracker-repo/server.js"]
