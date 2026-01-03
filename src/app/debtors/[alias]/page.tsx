@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, User, Landmark, Calendar } from 'lucide-react';
 import { useMemo } from 'react';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 export default function DebtorDetailPage() {
   const params = useParams();
   const { debtors, isLoading } = useDebtors();

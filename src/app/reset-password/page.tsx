@@ -15,6 +15,9 @@ import { Coins } from 'lucide-react';
 import { useAuth } from '@/firebase';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 const resetPasswordSchema = z
   .object({
     password: z

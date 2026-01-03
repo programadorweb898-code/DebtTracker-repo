@@ -9,6 +9,9 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useIsAdmin } from '@/hooks/use-admin';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const { user, loading } = useAuthContext();
   const router = useRouter();

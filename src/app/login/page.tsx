@@ -25,6 +25,9 @@ import {
 } from '@/components/ui/dialog';
 import { useAuth } from '@/firebase';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 const loginSchema = z.object({
   email: z.string()
     .min(1, 'El campo email es requerido.')

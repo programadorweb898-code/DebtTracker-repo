@@ -14,6 +14,9 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Coins } from 'lucide-react';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 const registerSchema = z
   .object({
     email: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),

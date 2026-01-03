@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, Check, AlertCircle, RefreshCw } from 'lucide-react';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 export default function SyncUsersPage() {
   const { user } = useUser();
   const firestore = useFirestore();

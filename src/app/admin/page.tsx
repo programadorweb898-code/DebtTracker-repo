@@ -15,6 +15,9 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { useAuthContext } from '@/context/auth-context';
 
+// Forzar renderizado dinámico para evitar pre-render durante build
+export const dynamic = 'force-dynamic';
+
 export default function AdminDashboard() {
   const router = useRouter();
   const isAdmin = useIsAdmin();
