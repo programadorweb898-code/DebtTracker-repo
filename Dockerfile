@@ -45,8 +45,18 @@ ENV FIREBASE_SERVICE_ACCOUNT_KEY=$FIREBASE_SERVICE_ACCOUNT_KEY
 # Build de Next.js en modo standalone
 RUN npm run build
 
+# Next.js standalone requiere copiar public y .next/static
+# Copiar recursivamente si existen, ignorar errores si no existen
+RUN mkdir -p .next/standalone/public .next/standalone/.next/static
+RUN cp -r public/* .next/standalone/public/ 2>/dev/null || true
+RUN cp -r .next/static/* .next/standalone/.next/static/ 2>/dev/null || true
+
+# Cambiar al directorio standalone para ejecutar
+WORKDIR /app/.next/standalone
+
 # Exponer el puerto (Render asigna uno dinámico en $PORT)
 EXPOSE 3000
 
-# Comando de arranque: standalone server
-CMD ["node", ".next/standalone/debTracker/DebtTracker-repo/server.js"]
+# En Docker, server.js está directamente en .next/standalone/
+# No en subdirectorios como en local
+CMD ["node", "server.js"]
